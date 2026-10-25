@@ -99,7 +99,7 @@ def fig_category_revenue(con, library) -> None:
                     xytext=(6, 0), textcoords="offset points",
                     va="center", fontsize=8.5, color=PALETTE["dark"])
     fig.tight_layout()
-    _save(fig, "02_revenue_by_category.png")
+    _save(fig, "03_revenue_by_category.png")
 
 
 def fig_top_products(con, library) -> None:
@@ -116,7 +116,7 @@ def fig_top_products(con, library) -> None:
                     xytext=(6, 0), textcoords="offset points",
                     va="center", fontsize=8.5, color=PALETTE["dark"])
     fig.tight_layout()
-    _save(fig, "03_top_products.png")
+    _save(fig, "04_top_products.png")
 
 
 def fig_aov_by_segment(con, library) -> None:
@@ -146,7 +146,7 @@ def fig_aov_by_segment(con, library) -> None:
     fig.suptitle("Segment value: basket size vs lifetime value",
                  fontsize=12, fontweight="bold", y=1.02)
     fig.tight_layout()
-    _save(fig, "04_aov_by_segment.png")
+    _save(fig, "05_segment_value.png")
 
 
 def fig_segment_distribution(con, library) -> None:
@@ -174,7 +174,7 @@ def fig_segment_distribution(con, library) -> None:
     ax.set_title("A third of the customers produce three quarters of the revenue")
     ax.legend(loc="upper right")
     fig.tight_layout()
-    _save(fig, "05_segment_distribution.png")
+    _save(fig, "06_segment_distribution.png")
 
 
 def fig_repeat_behaviour(con, library) -> None:
@@ -206,7 +206,7 @@ def fig_repeat_behaviour(con, library) -> None:
     axes[1].set_ylim(0, profile["avg_revenue_per_customer"].max() * 1.3)
 
     fig.tight_layout()
-    _save(fig, "06_repeat_behaviour.png")
+    _save(fig, "08_repeat_behaviour.png")
 
 
 def fig_revenue_bridge(con, library) -> None:
@@ -256,45 +256,7 @@ def fig_revenue_bridge(con, library) -> None:
         matplotlib.ticker.FuncFormatter(lambda v, _: f"${v/1000:,.0f}k")
     )
     fig.tight_layout()
-    _save(fig, "07_revenue_bridge.png")
-
-
-def fig_interpurchase(con, library) -> None:
-    gap = run_query(con, "interpurchase_interval", default_params(), library).iloc[0]
-
-    con2 = sqlite3.connect(DB_PATH)
-    try:
-        gaps = con2.execute(
-            """
-            WITH orders AS (
-                SELECT DISTINCT customer_id, order_id, order_date FROM fact_order_lines
-            ),
-            g AS (
-                SELECT julianday(order_date) - julianday(
-                    LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date, order_id)
-                ) AS gap_days
-                FROM orders
-            )
-            SELECT gap_days FROM g WHERE gap_days IS NOT NULL AND gap_days > 0
-            """
-        ).fetchall()
-    finally:
-        con2.close()
-    days = pd.Series([r[0] for r in gaps])
-
-    fig, ax = plt.subplots(figsize=(10, 4.2))
-    ax.hist(days, bins=60, color=PALETTE["teal"], edgecolor="white", linewidth=0.4)
-    ax.axvline(gap["median_gap_days"], color=PALETTE["red"], linewidth=1.8,
-               label=f"Median {gap['median_gap_days']:.0f} days")
-    ax.axvline(gap["avg_gap_days"], color=PALETTE["navy"], linewidth=1.8, linestyle="--",
-               label=f"Mean {gap['avg_gap_days']:.0f} days")
-    ax.set_xlabel("Days between consecutive orders")
-    ax.set_ylabel("Repeat intervals")
-    ax.set_title("Time between purchases - the tail is long, the median is not")
-    ax.legend(loc="upper right")
-    ax.set_xlim(0, min(400, days.max() * 1.02))
-    fig.tight_layout()
-    _save(fig, "08_interpurchase_interval.png")
+    _save(fig, "10_revenue_bridge.png")
 
 
 def fig_share_vs_units(con, library) -> None:
@@ -320,7 +282,7 @@ def fig_share_vs_units(con, library) -> None:
     ax.legend(loc="lower right")
     ax.set_xlim(0, df[["pct_of_units", "pct_of_revenue"]].to_numpy().max() * 1.35)
     fig.tight_layout()
-    _save(fig, "09_share_vs_units.png")
+    _save(fig, "12_revenue_vs_unit_share.png")
 
 
 def fig_dilutive_products(con, library) -> None:
@@ -340,7 +302,178 @@ def fig_dilutive_products(con, library) -> None:
                     xytext=(6, 0), textcoords="offset points",
                     va="center", fontsize=8.5, color=PALETTE["dark"])
     fig.tight_layout()
-    _save(fig, "10_high_volume_low_revenue.png")
+    _save(fig, "13_dilutive_products.png")
+
+
+def fig_first_repeat_gap(con, library) -> None:
+    """The second-purchase clock: how long a customer waits before order two."""
+    gap = run_query(con, "first_repeat_gap", default_params(), library).iloc[0]
+
+    con2 = sqlite3.connect(DB_PATH)
+    try:
+        gaps = con2.execute(
+            """
+            WITH orders AS (
+                SELECT DISTINCT customer_id, order_id, order_date FROM fact_order_lines
+            ),
+            sequenced AS (
+                SELECT order_date,
+                       ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS seq,
+                       LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS prev
+                FROM orders
+            )
+            SELECT julianday(order_date) - julianday(prev) AS gap_days
+            FROM sequenced
+            WHERE seq = 2 AND prev IS NOT NULL
+            """
+        ).fetchall()
+    finally:
+        con2.close()
+    days = pd.Series([r[0] for r in gaps])
+
+    fig, ax = plt.subplots(figsize=(10, 4.2))
+    ax.hist(days, bins=50, color=PALETTE["teal"], edgecolor="white", linewidth=0.4)
+    ax.axvline(gap["median_gap_days"], color=PALETTE["red"], linewidth=1.8,
+               label=f"Median {gap['median_gap_days']:.0f} days")
+
+    top = ax.get_ylim()[1]
+    for i, (days_mark, label) in enumerate(((30, "30 days"), (60, "60 days"), (90, "90 days"))):
+        ax.axvline(days_mark, color=PALETTE["grey"], linewidth=1.0, linestyle=":")
+        ax.annotate(
+            f"{label}\n{gap[f'pct_second_order_within_{days_mark}_days']:.0f}% repeated",
+            xy=(days_mark, top * (0.97 - 0.12 * i)), xytext=(4, 0),
+            textcoords="offset points", fontsize=7.5, ha="left", va="top",
+            color=PALETTE["dark"],
+        )
+
+    ax.set_xlabel("Days between a customer's first and second order")
+    ax.set_ylabel("Customers who placed a second order")
+    ax.set_title("The second-purchase clock: the first repeat comes much later than later repeats")
+    ax.legend(loc="upper right")
+    ax.set_xlim(0, min(400, days.max() * 1.02))
+    fig.tight_layout()
+    _save(fig, "09_first_repeat_gap.png")
+
+
+def fig_growth_decomposition(con, library) -> None:
+    """What explains the revenue change: customers, frequency or basket size."""
+    df = run_query(con, "revenue_growth_decomposition", default_params(), library)
+    latest = df.iloc[-1]
+
+    factors = [
+        ("Customers", latest["customers_yoy_pct"], PALETTE["teal"]),
+        ("Orders per customer", latest["frequency_yoy_pct"], PALETTE["red"]),
+        ("Average order value", latest["aov_yoy_pct"], PALETTE["red"]),
+    ]
+
+    fig, ax = plt.subplots(figsize=(9.5, 4.6))
+    bars = ax.bar(
+        [f[0] for f in factors], [f[1] for f in factors],
+        color=[f[2] for f in factors], width=0.5,
+    )
+    ax.axhline(0, color=PALETTE["dark"], linewidth=1.0)
+    ax.set_ylabel("Change year on year (%)")
+    ax.set_title(
+        f"Revenue grew {latest['revenue_yoy_pct']:.1f}% - "
+        "almost entirely from acquiring more customers"
+    )
+
+    for bar, (_, value, _) in zip(bars, factors):
+        offset = 8 if value > 0 else -18
+        ax.annotate(
+            f"{value:+.1f}%",
+            (bar.get_x() + bar.get_width() / 2, value),
+            xytext=(0, offset), textcoords="offset points",
+            ha="center", fontsize=12, fontweight="bold", color=PALETTE["dark"],
+        )
+
+    ax.set_ylim(-70, max(f[1] for f in factors) * 1.22)
+    fig.text(
+        0.5, -0.02,
+        "A blended average, not deterioration: the cohort the store already had bought "
+        "MORE in 2025 (3.30 orders each) than in 2024 (2.70).",
+        ha="center", fontsize=9, color=PALETTE["grey"],
+    )
+    fig.tight_layout()
+    _save(fig, "02_revenue_growth_decomposition.png")
+
+
+def fig_repeat_propensity(con, library) -> None:
+    """Does the size of a customer's first order predict whether they repeat?"""
+    df = run_query(con, "repeat_propensity_by_first_order", default_params(), library)
+
+    fig, ax = plt.subplots(figsize=(10, 4.4))
+    bars = ax.bar(
+        df["first_order_basket"], df["repeat_rate_pct"],
+        color=[PALETTE["red"], PALETTE["sand"], PALETTE["teal"], PALETTE["navy"]], width=0.55,
+    )
+    ax.set_ylabel("Customers who placed a second order (%)")
+    ax.set_xlabel("Size of the customer's first order")
+    ax.set_title("A customer's first order predicts whether they come back")
+    ax.set_ylim(0, df["repeat_rate_pct"].max() * 1.28)
+
+    for bar, rate, customers, lifetime in zip(
+        bars, df["repeat_rate_pct"], df["customers"], df["avg_lifetime_revenue"]
+    ):
+        ax.annotate(
+            f"{rate:.1f}%\n{customers:,} customers · ${lifetime:,.0f} lifetime",
+            (bar.get_x() + bar.get_width() / 2, rate),
+            xytext=(0, 6), textcoords="offset points", ha="center",
+            fontsize=8.5, color=PALETTE["dark"],
+        )
+
+    ax.annotate(
+        "19-point spread: a one-item first order is the clearest at-risk population",
+        xy=(0.02, 0.9), xycoords="axes fraction", fontsize=9, color=PALETTE["grey"],
+    )
+    fig.tight_layout()
+    _save(fig, "07_repeat_propensity_by_first_order.png")
+
+
+def fig_revenue_concentration(con, library) -> None:
+    """How concentrated is customer revenue? Lorenz curve against the even line."""
+    curve = run_query(con, "revenue_concentration_curve", default_params(), library)
+    stats = run_query(con, "revenue_concentration", default_params(), library).iloc[0]
+
+    fig, ax = plt.subplots(figsize=(9.5, 5.2))
+    ax.plot([0, 100], [0, 100], color=PALETTE["grey"], linestyle="--", linewidth=1.2,
+            label="Perfectly even revenue")
+    ax.plot(curve["cumulative_customer_pct"], curve["cumulative_revenue_pct"],
+            color=PALETTE["navy"], linewidth=2.4, marker="o", markersize=4,
+            label="Actual revenue concentration")
+
+    # Shade the Lorenz gap: the area between the curve and the even line.
+    ax.fill_between(curve["cumulative_customer_pct"], curve["cumulative_revenue_pct"],
+                    curve["cumulative_customer_pct"], color=PALETTE["sand"], alpha=0.25)
+
+    # Annotate with the exact Pareto shares, not the bucketed curve values,
+    # so the figure and the report quote the same number.
+    for pct, key in ((5, "top_5pct_customers_revenue_pct"),
+                     (10, "top_10pct_customers_revenue_pct"),
+                     (20, "top_20pct_customers_revenue_pct")):
+        value = float(stats[key])
+        plotted = curve.loc[curve["cumulative_customer_pct"] == pct, "cumulative_revenue_pct"]
+        if plotted.empty:
+            continue
+        ax.annotate(
+            f"top {pct}% of customers\nhold {value:.1f}% of revenue",
+            xy=(pct, float(plotted.iloc[0])), xytext=(pct + 9, float(plotted.iloc[0]) - 12),
+            fontsize=8.5, color=PALETTE["dark"],
+            arrowprops={"arrowstyle": "->", "color": PALETTE["grey"], "linewidth": 0.9},
+        )
+
+    ax.set_xlabel("Customers, ranked by revenue (cumulative %)")
+    ax.set_ylabel("Revenue (cumulative %)")
+    ax.set_title(
+        f"Revenue concentration: Gini {stats['gini_coefficient']:.2f} - "
+        "the top 10% of customers hold 44% of revenue"
+    )
+    ax.set_xlim(0, 100)
+    ax.set_ylim(0, 100)
+    ax.legend(loc="upper left")
+    ax.set_aspect("equal")
+    fig.tight_layout()
+    _save(fig, "11_revenue_concentration.png")
 
 
 def main() -> None:
@@ -350,13 +483,16 @@ def main() -> None:
     print(f"  built {datetime.now(timezone.utc):%Y-%m-%d %H:%M UTC}")
     try:
         fig_revenue_trend(con, library)
+        fig_growth_decomposition(con, library)
         fig_category_revenue(con, library)
         fig_top_products(con, library)
         fig_aov_by_segment(con, library)
         fig_segment_distribution(con, library)
+        fig_repeat_propensity(con, library)
         fig_repeat_behaviour(con, library)
+        fig_first_repeat_gap(con, library)
         fig_revenue_bridge(con, library)
-        fig_interpurchase(con, library)
+        fig_revenue_concentration(con, library)
         fig_share_vs_units(con, library)
         fig_dilutive_products(con, library)
     finally:

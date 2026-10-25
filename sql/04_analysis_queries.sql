@@ -712,3 +712,299 @@ FROM pairs
 GROUP BY category_a, category_b
 ORDER BY orders DESC
 LIMIT 10;
+
+-- ---------------------------------------------------------------------------
+-- name: revenue_concentration
+-- description: How concentrated is customer revenue? Pareto shares and Gini.
+-- ---------------------------------------------------------------------------
+WITH customer_revenue AS (
+    SELECT d.customer_id, SUM(f.net_revenue) AS revenue
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
+    GROUP BY d.customer_id
+),
+ranked AS (
+    SELECT
+        revenue,
+        ROW_NUMBER() OVER (ORDER BY revenue DESC) AS rank_desc,
+        ROW_NUMBER() OVER (ORDER BY revenue)     AS rank_asc,
+        COUNT(*)     OVER ()                      AS customers
+    FROM customer_revenue
+),
+totals AS (
+    SELECT
+        SUM(revenue) AS total_revenue,
+        SUM(CASE WHEN rank_desc <= customers * 0.01 THEN revenue ELSE 0 END) AS top_1,
+        SUM(CASE WHEN rank_desc <= customers * 0.05 THEN revenue ELSE 0 END) AS top_5,
+        SUM(CASE WHEN rank_desc <= customers * 0.10 THEN revenue ELSE 0 END) AS top_10,
+        SUM(CASE WHEN rank_desc <= customers * 0.20 THEN revenue ELSE 0 END) AS top_20
+    FROM ranked
+)
+SELECT
+    (SELECT customers FROM ranked LIMIT 1)                       AS customers,
+    ROUND(total_revenue, 2)                                     AS total_revenue,
+    ROUND(top_1  * 100.0 / total_revenue, 2)                    AS top_1pct_customers_revenue_pct,
+    ROUND(top_5  * 100.0 / total_revenue, 2)                    AS top_5pct_customers_revenue_pct,
+    ROUND(top_10 * 100.0 / total_revenue, 2)                    AS top_10pct_customers_revenue_pct,
+    ROUND(top_20 * 100.0 / total_revenue, 2)                    AS top_20pct_customers_revenue_pct,
+    -- Gini coefficient: 0 = perfectly even revenue, 1 = one customer holds all.
+    ROUND((2.0 * SUM(rank_asc * revenue) / (customers * total_revenue))
+          - (customers + 1.0) / customers, 4)                   AS gini_coefficient
+FROM ranked, totals;
+
+-- ---------------------------------------------------------------------------
+-- name: revenue_concentration_curve
+-- description: Cumulative revenue share as customers are added, best first.
+-- ---------------------------------------------------------------------------
+WITH customer_revenue AS (
+    SELECT d.customer_id, SUM(f.net_revenue) AS revenue
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
+    GROUP BY d.customer_id
+),
+ranked AS (
+    SELECT revenue, ROW_NUMBER() OVER (ORDER BY revenue DESC) AS rn,
+           COUNT(*) OVER () AS customers
+    FROM customer_revenue
+),
+bucketed AS (
+    SELECT
+        MIN(20, 1 + CAST((rn - 1) * 20.0 / customers AS INTEGER)) AS bucket,
+        SUM(revenue) AS revenue
+    FROM ranked
+    GROUP BY bucket
+)
+SELECT
+    bucket * 5                                    AS cumulative_customer_pct,
+    ROUND(100.0 * SUM(revenue) OVER (ORDER BY bucket)
+          / (SELECT SUM(revenue) FROM customer_revenue), 2) AS cumulative_revenue_pct
+FROM bucketed
+ORDER BY bucket;
+
+-- ---------------------------------------------------------------------------
+-- name: repeat_propensity_by_first_order
+-- description: Does the size of a customer's FIRST order predict whether they repeat?
+-- ---------------------------------------------------------------------------
+WITH filtered_lines AS (
+    SELECT f.customer_id, f.order_id, f.order_date, f.quantity, f.net_revenue, d.segment
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
+),
+orders AS (
+    SELECT customer_id, order_id, order_date,
+           SUM(quantity) AS units, SUM(net_revenue) AS revenue
+    FROM filtered_lines
+    GROUP BY customer_id, order_id, order_date
+),
+sequenced AS (
+    SELECT orders.*,
+           ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS order_seq
+    FROM orders
+),
+customers AS (
+    SELECT customer_id,
+           COUNT(*) AS orders,
+           SUM(revenue) AS lifetime_revenue,
+           MAX(CASE WHEN order_seq = 1 THEN units END) AS first_order_units
+    FROM sequenced
+    GROUP BY customer_id
+),
+banded AS (
+    SELECT customers.*,
+           CASE
+               WHEN first_order_units = 1 THEN '1 unit'
+               WHEN first_order_units = 2 THEN '2 units'
+               WHEN first_order_units <= 4 THEN '3-4 units'
+               ELSE '5+ units'
+           END AS first_order_basket,
+           CASE
+               WHEN first_order_units = 1 THEN 1
+               WHEN first_order_units = 2 THEN 2
+               WHEN first_order_units <= 4 THEN 3
+               ELSE 4
+           END AS basket_order
+    FROM customers
+)
+SELECT
+    first_order_basket,
+    COUNT(*)                                                          AS customers,
+    SUM(CASE WHEN orders >= 2 THEN 1 ELSE 0 END)                      AS repeat_customers,
+    SUM(CASE WHEN orders = 1 THEN 1 ELSE 0 END)                       AS one_time_customers,
+    ROUND(100.0 * SUM(CASE WHEN orders >= 2 THEN 1 ELSE 0 END)
+          / NULLIF(COUNT(*), 0), 2)                                   AS repeat_rate_pct,
+    ROUND(AVG(orders), 3)                                             AS avg_orders_per_customer,
+    ROUND(AVG(lifetime_revenue), 2)                                   AS avg_lifetime_revenue
+FROM banded
+GROUP BY first_order_basket, basket_order
+ORDER BY basket_order;
+
+-- ---------------------------------------------------------------------------
+-- name: one_time_buyer_profile
+-- description: The retention target population: what one-time buyers bought.
+-- ---------------------------------------------------------------------------
+WITH filtered_lines AS (
+    SELECT f.customer_id, f.order_id, f.order_date, f.category, f.quantity,
+           f.net_revenue, d.segment
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
+),
+orders AS (
+    SELECT customer_id, order_id, order_date, SUM(quantity) AS units
+    FROM filtered_lines
+    GROUP BY customer_id, order_id, order_date
+),
+customer_order_counts AS (
+    SELECT customer_id, COUNT(*) AS orders FROM orders GROUP BY customer_id
+),
+one_time_orders AS (
+    SELECT orders.*
+    FROM orders
+    JOIN customer_order_counts USING (customer_id)
+    WHERE customer_order_counts.orders = 1
+)
+SELECT
+    f.category,
+    COUNT(DISTINCT f.order_id)                                         AS one_time_orders,
+    COUNT(DISTINCT f.customer_id)                                      AS one_time_customers,
+    ROUND(SUM(f.net_revenue), 2)                                       AS one_time_revenue,
+    ROUND(SUM(f.net_revenue) / NULLIF(COUNT(DISTINCT f.order_id), 0), 2) AS one_time_aov,
+    ROUND(SUM(f.quantity) * 1.0 / NULLIF(COUNT(DISTINCT f.order_id), 0), 2) AS units_per_order
+FROM filtered_lines f
+JOIN one_time_orders o ON o.order_id = f.order_id
+GROUP BY f.category
+ORDER BY one_time_revenue DESC;
+
+-- ---------------------------------------------------------------------------
+-- name: first_repeat_gap
+-- description: The second-purchase clock: days from a first order to a second.
+-- ---------------------------------------------------------------------------
+WITH filtered_lines AS (
+    SELECT f.customer_id, f.order_id, f.order_date, d.segment
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
+),
+orders AS (
+    SELECT DISTINCT customer_id, order_id, order_date FROM filtered_lines
+),
+sequenced AS (
+    SELECT orders.*,
+           ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS order_seq,
+           LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date, order_id) AS previous_date
+    FROM orders
+),
+gaps AS (
+    SELECT julianday(order_date) - julianday(previous_date) AS gap_days
+    FROM sequenced
+    WHERE order_seq = 2 AND previous_date IS NOT NULL
+),
+ranked AS (
+    SELECT gap_days, ROW_NUMBER() OVER (ORDER BY gap_days) AS rn,
+           COUNT(*) OVER () AS n
+    FROM gaps
+)
+SELECT
+    COUNT(*)                                                        AS first_to_second_intervals,
+    ROUND(AVG(gap_days), 1)                                        AS avg_gap_days,
+    ROUND(AVG(CASE WHEN rn IN ((n + 1) / 2, (n + 2) / 2) THEN gap_days END), 1) AS median_gap_days,
+    ROUND(100.0 * SUM(CASE WHEN gap_days <= 30 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_second_order_within_30_days,
+    ROUND(100.0 * SUM(CASE WHEN gap_days <= 45 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_second_order_within_45_days,
+    ROUND(100.0 * SUM(CASE WHEN gap_days <= 60 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_second_order_within_60_days,
+    ROUND(100.0 * SUM(CASE WHEN gap_days <= 90 THEN 1 ELSE 0 END) / COUNT(*), 2) AS pct_second_order_within_90_days
+FROM ranked;
+
+-- ---------------------------------------------------------------------------
+-- name: revenue_growth_decomposition
+-- description: What explains the revenue change: customers, frequency or AOV?
+-- ---------------------------------------------------------------------------
+WITH yearly AS (
+    SELECT
+        strftime('%Y', f.order_date) AS year,
+        COUNT(DISTINCT f.customer_id) AS customers,
+        COUNT(DISTINCT f.order_id)    AS orders,
+        SUM(f.net_revenue)            AS revenue
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
+    GROUP BY strftime('%Y', f.order_date)
+),
+with_growth AS (
+    SELECT
+        year, customers, orders,
+        orders * 1.0 / customers  AS orders_per_customer,
+        revenue / orders          AS avg_order_value,
+        revenue,
+        customers * 1.0 / LAG(customers) OVER (ORDER BY year)       AS customer_ratio,
+        (orders * 1.0 / customers)
+            / LAG(orders * 1.0 / customers) OVER (ORDER BY year)       AS frequency_ratio,
+        (revenue / orders)
+            / LAG(revenue / orders) OVER (ORDER BY year)               AS aov_ratio,
+        revenue / LAG(revenue) OVER (ORDER BY year)                    AS revenue_ratio
+    FROM yearly
+)
+SELECT
+    year,
+    customers,
+    orders,
+    ROUND(orders_per_customer, 3)                                    AS orders_per_customer,
+    ROUND(avg_order_value, 2)                                        AS avg_order_value,
+    ROUND(revenue, 2)                                                 AS net_revenue,
+    ROUND(100.0 * (customer_ratio  - 1), 1)                           AS customers_yoy_pct,
+    ROUND(100.0 * (frequency_ratio  - 1), 1)                          AS frequency_yoy_pct,
+    ROUND(100.0 * (aov_ratio       - 1), 1)                           AS aov_yoy_pct,
+    ROUND(100.0 * (revenue_ratio   - 1), 1)                           AS revenue_yoy_pct,
+    -- Revenue is customers x frequency x AOV, so the three factors must
+    -- reproduce the total change. This column is the arithmetic proof.
+    ROUND(100.0 * (customer_ratio * frequency_ratio * aov_ratio - 1), 1) AS implied_revenue_yoy_pct
+FROM with_growth
+ORDER BY year;
+
+-- ---------------------------------------------------------------------------
+-- name: orders_by_customer_tenure
+-- description: Separates orders from newly-acquired customers from orders from
+-- description: customers carried over from a previous year. A fall in blended
+-- description: orders-per-customer can be a cohort-mix effect, not a drop in
+-- description: the behaviour of the customers the business already had.
+-- ---------------------------------------------------------------------------
+WITH customer_orders AS (
+    SELECT customer_id, order_id, order_date
+    FROM fact_order_lines
+    GROUP BY customer_id, order_id, order_date
+),
+tenure AS (
+    SELECT customer_orders.*,
+           strftime('%Y', MIN(order_date) OVER (PARTITION BY customer_id)) AS acquisition_year
+    FROM customer_orders
+)
+SELECT
+    strftime('%Y', order_date)                                         AS order_year,
+    CASE WHEN strftime('%Y', order_date) = acquisition_year
+         THEN 'Acquisition year (first purchase)'
+         ELSE 'Existing customer (repeat year)'
+    END                                                               AS order_type,
+    COUNT(DISTINCT customer_id)                                       AS customers,
+    COUNT(DISTINCT order_id)                                          AS orders,
+    ROUND(COUNT(DISTINCT order_id) * 1.0 / COUNT(DISTINCT customer_id), 3) AS orders_per_customer
+FROM tenure
+WHERE order_date BETWEEN :start_date AND :end_date
+  AND (:segment IS NULL OR customer_id IN (
+        SELECT customer_id FROM dim_customers WHERE segment = :segment))
+GROUP BY order_year, order_type
+ORDER BY order_year, order_type;
+

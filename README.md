@@ -1,11 +1,37 @@
-# Shopify purchasing behaviour analysis
+# Shopify e-commerce purchasing behaviour analysis
 
-An end-to-end e-commerce analytics case study: revenue performance, average
-order value by customer segment, purchase frequency, repeat-purchase rate and
-the purchasing patterns behind them.
+Revenue performance, customer segmentation, average order value, purchase
+frequency and repeat-purchase behaviour for a DTC store — an end-to-end
+e-commerce analytics case study.
 
 Python · SQLite · SQL · Streamlit + Plotly · 33 named SQL queries ·
 23 automated data-quality checks · 46 automated tests · 10 figures
+
+## Business problem and objectives
+
+**Problem.** A fast-growing store can look healthy on revenue while its
+economics quietly deteriorate: baskets shrink, customers buy once and never
+return, and a handful of products carry the whole business. The questions a
+merchant actually asks are "where is the revenue coming from", "which
+customers are worth keeping", "is growth coming from bigger baskets or from
+more buyers", and "which products earn their shelf space".
+
+**Objectives.**
+
+1. **Define revenue precisely** and publish the full bridge from gross item
+   value to net revenue, so every number in the report can be reconciled.
+2. **Segment the customer base** and prove which behaviour actually drives
+   value — frequency versus basket size — instead of assuming bigger orders
+   are better.
+3. **Distinguish growth from volume** across two years and connect product
+   mix to revenue per unit.
+4. **Ship the analysis as a working dashboard** whose numbers cannot drift
+   from the published SQL, with a filter model whose semantics are documented.
+5. **Validate the data before trusting it**: 93 deliberately injected defects,
+   23 checks, a row-count trail and a build-time assertion that every
+   reconciliation variance is explained.
+
+---
 
 > ## ⚠️ The data is synthetic
 >
@@ -137,6 +163,31 @@ dashboard cannot drift from the published analysis. The test suite compares
 them directly (`TestDashboardParity`).
 
 ![Segment distribution](reports/figures/05_segment_distribution.png)
+
+---
+
+## Business recommendations
+
+Each recommendation names the finding behind it, the action it supports and
+the metric to watch. **No revenue uplift is claimed** — these are tests to run.
+Full version: [`reports/business_analysis.md`](reports/business_analysis.md).
+
+1. **Treat purchase frequency, not basket size, as the growth lever.** The
+   High Value segment wins on 5.28 orders and $1,903.91 lifetime value, while
+   the Regular segment has the highest AOV ($368.72) but 1.29 orders. Target
+   the **516 Regular customers with exactly one order** with a second-purchase
+   programme built around what they already buy.
+   *Measure: repeat purchase rate in the Regular segment (22.87% today), with
+   a holdout group.*
+2. **Rebalance the basket around revenue per unit.** Beauty and Kids & Baby
+   are 25.55% of units but 13.48% of revenue ($39.00 and $43.16 per unit
+   against $101–$109 elsewhere); Apparel + Beauty (396 baskets) and Beauty +
+   Kids & Baby (375) are the natural bundle pairs.
+   *Measure: revenue per unit and units per order for the treated SKUs.*
+3. **Trigger lifecycle campaigns on the observed repeat clock, not the mean.**
+   Campaign timing should follow the measured inter-purchase distribution
+   rather than an average interval.
+   *Measure: second-order conversion and days-to-second-order.*
 
 ---
 
@@ -299,6 +350,27 @@ the generator at all.
 - **The dashboard recomputes the repeat rate within the filtered selection**,
   so it can differ from the unfiltered headline rate. The filter semantics are
   stated in the app's Methodology tab and in `docs/methodology.md`.
+
+---
+
+## Next steps
+
+1. **Swap the synthetic store for a real export.** The pipeline, SQL and
+   dashboard are unchanged by that swap — only the extract and the schema
+   mapping differ. This is the single change that would turn the project from
+   a method demonstration into a business result.
+2. **Add the inputs the analysis currently cannot use:** acquisition cost and
+   marketing spend (LTV:CAC), gross margin per product (profit, not revenue),
+   and returns reasons (quality-driven churn versus price-driven churn).
+3. **Add a recency dimension to the segmentation.** Recency is excluded today
+   because the window right-censors it; with a longer or open-ended window it
+   becomes the standard RFM third axis.
+4. **Model the repeat-purchase floor.** 40.94% is a floor for a finite window;
+   a survival or Markov model over the inter-purchase distribution would
+   estimate lifetime behaviour instead of a window-censored rate.
+5. **Product-level recommendations.** Rank products by revenue per unit and
+   by units, and attach the "high volume / low revenue" set to a bundle or
+   markdown hypothesis to be tested.
 
 ---
 

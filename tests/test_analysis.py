@@ -650,7 +650,6 @@ class TestQueryLibrary:
 
     def test_query_names_are_unique(self, library):
         assert len(library) == len(set(library))
-
     def test_dq_checks_behave_as_documented(self, con, library):
         """The validation queries must find the defects that were injected."""
         dq = run_query(con, "dq_summary", default_params(), library).set_index("check_id")
@@ -686,3 +685,144 @@ class TestQueryLibrary:
         assert one(
             con, "SELECT COUNT(*) AS n FROM fact_orders WHERE order_status <> 'completed'"
         )["n"] == 0
+
+
+# ---------------------------------------------------------------------------
+# 6. PUBLISHED CLAIMS
+# ---------------------------------------------------------------------------
+# Every number quoted in README.md and reports/decision_report.md is asserted
+# here against the live database. If the data or a formula changes, these
+# tests fail and the documentation has to be corrected rather than drifting.
+
+
+class TestPublishedClaims:
+    def test_headline_kpis(self, con, kpi):
+        assert kpi["total_net_revenue"] == 1681819.35
+        assert kpi["avg_order_value"] == 332.31
+        assert kpi["repeat_purchase_rate_pct"] == 40.94
+        assert kpi["eligible_orders"] == 5061
+        assert kpi["units_sold"] == 21602
+        assert kpi["unique_customers"] == 2008
+        assert kpi["repeat_customers"] == 822
+        assert kpi["avg_orders_per_customer"] == 2.52
+        assert kpi["top_product_revenue"] == 98870.65
+        assert kpi["top_product_units"] == 343
+        assert kpi["gross_item_revenue"] == 1759900.43
+        assert kpi["discounts_given"] == 45116.84
+        assert kpi["effective_discount_pct"] == 2.56
+        assert kpi["refunds_given"] == 32964.24
+
+    def test_one_time_buyer_opportunity(self, con, library):
+        """1,186 one-time buyers = 59% of customers but only 20.5% of revenue."""
+        df = run_query(con, "repeat_purchase_summary", default_params(), library).iloc[0]
+        assert int(df["unique_customers"]) == 2008
+        assert int(df["repeat_customers"]) == 822
+        assert int(df["one_time_customers"]) == 1186
+        assert df["repeat_purchase_rate_pct"] == 40.94
+        assert df["avg_revenue_per_customer"] == 837.56
+        assert df["avg_order_value"] == 332.31
+
+    def test_repeat_buyers_are_worth_5_6_times_one_time_buyers(self, con):
+        row = one(
+            con,
+            """
+            SELECT
+                ROUND(AVG(CASE WHEN is_repeat_customer = 1 THEN net_revenue END), 2) AS repeat_value,
+                ROUND(AVG(CASE WHEN is_repeat_customer = 0 THEN net_revenue END), 2) AS one_time_value
+            FROM dim_customers
+            """,
+        )
+        assert row["repeat_value"] == 1626.44
+        assert row["one_time_value"] == 290.80
+        assert round(row["repeat_value"] / row["one_time_value"], 1) == 5.6
+
+    def test_revenue_concentration(self, con, library):
+        df = run_query(con, "revenue_concentration", default_params(), library).iloc[0]
+        assert int(df["customers"]) == 2008
+        assert df["total_revenue"] == 1681819.35
+        assert df["top_1pct_customers_revenue_pct"] == 8.97
+        assert df["top_5pct_customers_revenue_pct"] == 29.27
+        assert df["top_10pct_customers_revenue_pct"] == 43.99
+        assert df["top_20pct_customers_revenue_pct"] == 62.03
+        assert df["gini_coefficient"] == 0.5853
+
+    def test_concentration_curve_is_monotonic_and_ends_at_100(self, con, library):
+        df = run_query(con, "revenue_concentration_curve", default_params(), library)
+        assert df["cumulative_revenue_pct"].is_monotonic_increasing
+        assert df["cumulative_revenue_pct"].iloc[-1] == 100.00
+        assert df["cumulative_customer_pct"].iloc[-1] == 100
+
+    def test_first_order_basket_size_predicts_repeat_behaviour(self, con, library):
+        df = run_query(con, "repeat_propensity_by_first_order", default_params(), library)
+        rates = df["repeat_rate_pct"].tolist()
+        assert rates == sorted(rates), "repeat rate should rise with first-order basket size"
+        assert rates[0] == 29.37
+        assert rates[-1] == 48.19
+        assert df["customers"].sum() == 2008
+        assert int(df["one_time_customers"].sum()) == 1186
+
+    def test_second_order_is_slower_than_a_later_repeat(self, con, library):
+        """The first->second gap sets the campaign clock; it is not the 56-day average."""
+        first = run_query(con, "first_repeat_gap", default_params(), library).iloc[0]
+        assert int(first["first_to_second_intervals"]) == 822
+        assert first["median_gap_days"] == 102.0
+        assert first["pct_second_order_within_30_days"] == 21.05
+        assert first["pct_second_order_within_60_days"] == 37.83
+        assert first["pct_second_order_within_90_days"] == 46.84
+
+    def test_growth_decomposition_is_arithmetically_consistent(self, con, library):
+        """Revenue change must equal customers x frequency x AOV.
+
+        This is the regression test for an integer-division bug that made
+        `1986 / 500` truncate to `3` and produced a decomposition that did not
+        reproduce the revenue change.
+        """
+        df = run_query(con, "revenue_growth_decomposition", default_params(), library)
+        latest = df.iloc[-1]
+        assert latest["customers_yoy_pct"] == 297.2
+        assert latest["frequency_yoy_pct"] == -30.7
+        assert latest["aov_yoy_pct"] == -6.4
+        assert latest["revenue_yoy_pct"] == 157.5
+        assert abs(latest["implied_revenue_yoy_pct"] - latest["revenue_yoy_pct"]) < 0.15
+
+    def test_frequency_decline_is_a_cohort_mix_effect_not_deterioration(self, con, library):
+        """The blended orders-per-customer fell, but the retained cohort bought more."""
+        df = run_query(con, "orders_by_customer_tenure", default_params(), library)
+        new_2025 = df[
+            (df["order_year"] == "2025")
+            & (df["order_type"].str.startswith("Acquisition"))
+        ].iloc[0]
+        existing_2025 = df[
+            (df["order_year"] == "2025")
+            & (df["order_type"].str.startswith("Existing"))
+        ].iloc[0]
+        base_2024 = df[df["order_year"] == "2024"].iloc[0]
+
+        assert base_2024["orders_per_customer"] == 2.698
+        assert new_2025["orders_per_customer"] == 1.416
+        assert existing_2025["orders_per_customer"] == 3.299
+        # The carried-over cohort bought MORE than it did in its acquisition year.
+        assert existing_2025["orders_per_customer"] > base_2024["orders_per_customer"]
+
+    def test_segment_claims(self, con, library):
+        profile = run_query(con, "segment_profile", default_params(), library).set_index("segment")
+        assert int(profile.loc["High Value", "customers"]) == 669
+        assert profile.loc["High Value", "pct_of_revenue"] == 75.73
+        assert profile.loc["Regular", "avg_order_value"] == 368.72
+        assert profile.loc["High Value", "avg_order_value"] == 360.72
+        assert profile.loc["Low Engagement", "avg_order_value"] == 135.82
+
+    def test_category_claims(self, con, library):
+        df = run_query(con, "category_revenue_share", default_params(), library).set_index("category")
+        assert df.loc["Footwear", "pct_of_revenue"] == 17.69
+        assert df.loc["Beauty", "pct_of_revenue"] == 6.42
+        assert df.loc["Beauty", "pct_of_units"] == 12.81
+        assert df.loc["Kids & Baby", "pct_of_revenue"] == 7.06
+        assert df.loc["Kids & Baby", "pct_of_units"] == 12.74
+
+    def test_top_product_claims(self, con, library):
+        df = run_query(con, "top_products_by_revenue", default_params(), library)
+        assert df.iloc[0]["product_name"] == "Essential Two Person Tent"
+        assert df.iloc[0]["net_revenue"] == 98870.65
+        assert df.iloc[0]["pct_of_revenue"] == 5.88
+        assert round(df["pct_of_revenue"].sum(), 2) == 36.97
