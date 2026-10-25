@@ -1,0 +1,115 @@
+product_id,product_name,category,subcategory,vendor,unit_price,launched_date,source
+PROD-0001,Nordic Essential Cotton T-Shirt,Apparel,Tops,Apparel Co.,22.31,2021-08-13,synthetic
+PROD-0002,Premium Pima Cotton Long Sleeve,Apparel,Tops,Apparel Co.,39.95,2023-01-20,synthetic
+PROD-0003,Essential Slim Fit Stretch Jeans,Apparel,Bottoms,Apparel Co.,77.03,2019-01-22,synthetic
+PROD-0004,Heritage Tailored Chino Trousers,Apparel,Bottoms,Apparel Co.,74.53,2020-08-15,synthetic
+PROD-0005,Essential Wrap Midi Dress,Apparel,Dresses,Apparel Co.,76.48,2020-11-11,synthetic
+PROD-0006,Urban Linen Summer Sundress,Apparel,Dresses,Apparel Co.,63.46,2019-11-02,synthetic
+PROD-0007,Everyday Waterproof Packable Shell,Apparel,Outerwear,Apparel Co.,151.92,2023-06-13,synthetic
+PROD-0008,Alpine Quilted Puffer Jacket,Apparel,Outerwear,Apparel Co.,159.04,2019-10-07,synthetic
+PROD-0009,Nordic Merino Crew Sweater,Apparel,Knitwear,Apparel Co.,83.03,2022-11-08,synthetic
+PROD-0010,Classic Cashmere Blend Cardigan,Apparel,Knitwear,Apparel Co.,140.26,2023-08-17,synthetic
+PROD-0011,Studio Performance Training Leggings,Apparel,Activewear,Apparel Co.,54.58,2020-09-08,synthetic
+PROD-0012,Essential Moisture Wicking Running Tee,Apparel,Activewear,Apparel Co.,42.84,2021-12-07,synthetic
+PROD-0013,Nordic Bamboo Jersey Pyjama Set,Apparel,Sleepwear,Apparel Co.,50.55,2020-04-07,synthetic
+PROD-0014,Classic Cotton Canvas Overshirt,Apparel,Workwear,Apparel Co.,95.94,2023-04-18,synthetic
+PROD-0015,Compact Waterproof Packable Shell,Apparel,Outerwear,Apparel Co.,117.77,2020-11-08,synthetic
+PROD-0016,Lightweight Tailored Chino Trousers,Apparel,Bottoms,Apparel Co.,79.25,2022-11-09,synthetic
+PROD-0017,Organic Cashmere Blend Cardigan,Apparel,Knitwear,Apparel Co.,150.81,2024-07-01,synthetic
+PROD-0018,Premium Pima Cotton Long Sleeve 2,Apparel,Tops,Apparel Co.,43.15,2023-12-01,synthetic
+PROD-0019,Premium Everyday Canvas Sneaker,Footwear,Sneakers,Footwear Co.,73.3,2020-11-21,synthetic
+PROD-0020,Lightweight Leather Court Sneaker,Footwear,Sneakers,Footwear Co.,122.42,2019-02-03,synthetic
+PROD-0021,Classic Knit Running Shoe,Footwear,Sneakers,Footwear Co.,164.33,2020-09-22,synthetic
+PROD-0022,Compact Waterproof Chelsea Boot,Footwear,Boots,Footwear Co.,135.45,2019-07-02,synthetic
+PROD-0023,Classic Insulated Hiking Boot,Footwear,Boots,Footwear Co.,142.72,2023-07-13,synthetic
+PROD-0024,Compact Contoured Leather Sandal,Footwear,Sandals,Footwear Co.,65.95,2024-10-09,synthetic
+PROD-0025,Coastal Derby Leather Dress Shoe,Footwear,Formal,Footwear Co.,113.04,2021-12-22,synthetic
+PROD-0026,Coastal Cushioned Recovery Slide,Footwear,Slides,Footwear Co.,34.63,2020-07-21,synthetic
+PROD-0027,Urban Leather Court Sneaker,Footwear,Sneakers,Footwear Co.,155.41,2019-02-27,synthetic
+PROD-0028,Nordic Leather Court Sneaker,Footwear,Sneakers,Footwear Co.,123.6,2021-11-28,synthetic
+PROD-0029,Signature Everyday Canvas Sneaker,Footwear,Sneakers,Footwear Co.,66.49,2020-05-22,synthetic
+PROD-0030,Heritage Cushioned Recovery Slide,Footwear,Slides,Footwear Co.,31.43,2019-03-17,synthetic
+PROD-0031,Essential Derby Leather Dress Shoe,Footwear,Formal,Footwear Co.,224.42,2022-01-05,synthetic
+PROD-0032,Classic Cast Iron Skillet 26cm,Home & Living,Kitchen,Home Co.,55.26,2021-05-08,synthetic
+PROD-0033,Heritage Stoneware Dinner Set 16pc,Home & Living,Kitchen,Home Co.,108.78,2023-03-13,synthetic
+PROD-0034,Premium Pour Over Coffee Kettle,Home & Living,Kitchen,Home Co.,56.76,2024-04-04,synthetic
+PROD-0035,Classic Brushed Cotton Duvet Cover,Home & Living,Bedroom,Home Co.,84.63,2021-05-15,synthetic
+PROD-0036,Coastal Memory Foam Pillow Pair,Home & Living,Bedroom,Home Co.,60.22,2019-02-12,synthetic
+PROD-0037,Essential Ceramic Table Lamp,Home & Living,Decor,Home Co.,115.77,2022-08-14,synthetic
+PROD-0038,Bold Macrame Wall Hanging,Home & Living,Decor,Home Co.,40.28,2024-07-28,synthetic
+PROD-0039,Lightweight Woven Storage Basket Set,Home & Living,Storage,Home Co.,49.61,2024-02-11,synthetic
+PROD-0040,Organic Oak Side Table,Home & Living,Furniture,Home Co.,182.08,2021-02-18,synthetic
+PROD-0041,Urban Waffle Cotton Throw Blanket,Home & Living,Textiles,Home Co.,66.72,2024-11-28,synthetic
+PROD-0042,Essential Macrame Wall Hanging,Home & Living,Decor,Home Co.,31.41,2021-09-08,synthetic
+PROD-0043,Organic Stoneware Dinner Set 16pc,Home & Living,Kitchen,Home Co.,106.31,2019-05-16,synthetic
+PROD-0044,Signature Woven Storage Basket Set,Home & Living,Storage,Home Co.,56.82,2021-10-24,synthetic
+PROD-0045,Signature Pour Over Coffee Kettle,Home & Living,Kitchen,Home Co.,48.81,2022-09-16,synthetic
+PROD-0046,Bold Pour Over Coffee Kettle,Home & Living,Kitchen,Home Co.,34.76,2019-01-20,synthetic
+PROD-0047,Coastal Daily Hydrating Serum,Beauty,Skincare,Beauty Co.,37.55,2023-04-14,synthetic
+PROD-0048,Alpine Gentle Foaming Cleanser,Beauty,Skincare,Beauty Co.,28.48,2020-12-06,synthetic
+PROD-0049,Classic Broad Spectrum SPF50 Fluid,Beauty,Skincare,Beauty Co.,26.7,2022-08-28,synthetic
+PROD-0050,Alpine Nourishing Argan Shampoo,Beauty,Haircare,Beauty Co.,25.48,2024-06-26,synthetic
+PROD-0051,Lightweight Repair Hair Mask,Beauty,Haircare,Beauty Co.,26.15,2023-11-10,synthetic
+PROD-0052,Essential Eau de Parfum 50ml,Beauty,Fragrance,Beauty Co.,81.18,2023-01-03,synthetic
+PROD-0053,Alpine Velvet Matte Lipstick,Beauty,Makeup,Beauty Co.,16.54,2019-05-21,synthetic
+PROD-0054,Essential Full Coverage Foundation,Beauty,Makeup,Beauty Co.,31.58,2020-03-24,synthetic
+PROD-0055,Heritage Shea Butter Hand Cream,Beauty,Body Care,Beauty Co.,13.26,2021-07-09,synthetic
+PROD-0056,Heritage Essential Oil Starter Set,Beauty,Wellness,Beauty Co.,40.28,2023-03-07,synthetic
+PROD-0057,Slim Eau de Parfum 50ml,Beauty,Fragrance,Beauty Co.,85.58,2020-06-11,synthetic
+PROD-0058,Lightweight Shea Butter Hand Cream,Beauty,Body Care,Beauty Co.,25.01,2023-03-23,synthetic
+PROD-0059,Organic Essential Oil Starter Set,Beauty,Wellness,Beauty Co.,29.85,2019-10-17,synthetic
+PROD-0060,Signature Wireless Over-Ear Headphones,Electronics,Audio,Electronics Co.,139.64,2023-01-11,synthetic
+PROD-0061,Urban Portable Bluetooth Speaker,Electronics,Audio,Electronics Co.,82.91,2021-05-08,synthetic
+PROD-0062,Urban True Wireless Earbuds,Electronics,Audio,Electronics Co.,107.62,2024-07-03,synthetic
+PROD-0063,Premium USB-C Docking Station,Electronics,Computing,Electronics Co.,160.15,2024-08-10,synthetic
+PROD-0064,Premium Mechanical Keyboard 75%,Electronics,Computing,Electronics Co.,94.41,2021-09-03,synthetic
+PROD-0065,Alpine 4K Webcam Pro,Electronics,Computing,Electronics Co.,114.21,2020-10-28,synthetic
+PROD-0066,Classic Smart LED Bulb 4-Pack,Electronics,Smart Home,Electronics Co.,39.29,2022-09-01,synthetic
+PROD-0067,Studio Video Doorbell,Electronics,Smart Home,Electronics Co.,134.22,2024-02-26,synthetic
+PROD-0068,Lightweight MagSafe Power Bank,Electronics,Mobile Accessories,Electronics Co.,70.58,2019-03-14,synthetic
+PROD-0069,Compact Fast Charger 65W,Electronics,Mobile Accessories,Electronics Co.,55.81,2019-05-11,synthetic
+PROD-0070,Bold MagSafe Power Bank,Electronics,Mobile Accessories,Electronics Co.,87.45,2021-03-12,synthetic
+PROD-0071,Premium True Wireless Earbuds,Electronics,Audio,Electronics Co.,122.41,2024-08-28,synthetic
+PROD-0072,Studio Video Doorbell 2,Electronics,Smart Home,Electronics Co.,162.4,2022-02-24,synthetic
+PROD-0073,Heritage Wireless Over-Ear Headphones,Electronics,Audio,Electronics Co.,147.66,2023-02-15,synthetic
+PROD-0074,Everyday Adjustable Kettlebell 20kg,Sports & Outdoors,Fitness,Sports Co.,127.43,2023-04-03,synthetic
+PROD-0075,Classic Resistance Band Set,Sports & Outdoors,Fitness,Sports Co.,25.14,2022-10-20,synthetic
+PROD-0076,Urban Insulated Gym Bottle,Sports & Outdoors,Fitness,Sports Co.,35.39,2021-06-04,synthetic
+PROD-0077,Essential Two Person Tent,Sports & Outdoors,Camping,Sports Co.,312.25,2020-04-25,synthetic
+PROD-0078,Essential Down Sleeping Bag,Sports & Outdoors,Camping,Sports Co.,158.09,2022-01-03,synthetic
+PROD-0079,Lightweight Portable Camp Stove,Sports & Outdoors,Camping,Sports Co.,44.89,2024-06-12,synthetic
+PROD-0080,Urban Cycling Helmet,Sports & Outdoors,Cycling,Sports Co.,87.03,2022-10-14,synthetic
+PROD-0081,Alpine Hydration Backpack 12L,Sports & Outdoors,Cycling,Sports Co.,66.68,2022-06-23,synthetic
+PROD-0082,Organic Nylon Dry Bag 20L,Sports & Outdoors,Water,Sports Co.,33.31,2019-10-24,synthetic
+PROD-0083,Everyday Match Football Size 5,Sports & Outdoors,Team Sports,Sports Co.,31.4,2020-12-24,synthetic
+PROD-0084,Compact Adjustable Kettlebell 20kg,Sports & Outdoors,Fitness,Sports Co.,243.07,2023-01-22,synthetic
+PROD-0085,Nordic Match Football Size 5,Sports & Outdoors,Team Sports,Sports Co.,48.89,2023-06-13,synthetic
+PROD-0086,Studio Hydration Backpack 12L,Sports & Outdoors,Cycling,Sports Co.,91.86,2024-10-02,synthetic
+PROD-0087,Bold Cycling Helmet,Sports & Outdoors,Cycling,Sports Co.,72.17,2020-01-28,synthetic
+PROD-0088,Essential Canvas Weekender Duffel,Accessories,Bags,Accessories Co.,101.02,2023-09-15,synthetic
+PROD-0089,Bold Slim Laptop Backpack,Accessories,Bags,Accessories Co.,129.15,2024-01-22,synthetic
+PROD-0090,Everyday Full Grain Leather Wallet,Accessories,Wallets,Accessories Co.,57.93,2022-04-24,synthetic
+PROD-0091,Urban Reversible Leather Belt,Accessories,Belts,Accessories Co.,46.08,2019-09-07,synthetic
+PROD-0092,Classic Sterling Silver Chain Necklace,Accessories,Jewellery,Accessories Co.,92.28,2021-07-17,synthetic
+PROD-0093,Everyday Minimalist Steel Watch,Accessories,Jewellery,Accessories Co.,126.09,2019-02-13,synthetic
+PROD-0094,Compact Polarised Aviator Sunglasses,Accessories,Sunglasses,Accessories Co.,108.25,2022-04-18,synthetic
+PROD-0095,Lightweight Unstructured Cotton Cap,Accessories,Hats,Accessories Co.,23.54,2022-09-18,synthetic
+PROD-0096,Urban Cashmere Blend Scarf,Accessories,Scarves,Accessories Co.,83.94,2019-09-28,synthetic
+PROD-0097,Lightweight Universal Packing Cube Set,Accessories,Travel,Accessories Co.,28.92,2023-02-20,synthetic
+PROD-0098,Premium Minimalist Steel Watch,Accessories,Jewellery,Accessories Co.,173.87,2024-05-23,synthetic
+PROD-0099,Nordic Sterling Silver Chain Necklace,Accessories,Jewellery,Accessories Co.,90.04,2021-01-01,synthetic
+PROD-0100,Lightweight Unstructured Cotton Cap 2,Accessories,Hats,Accessories Co.,36.31,2021-12-03,synthetic
+PROD-0101,Lightweight Sterling Silver Chain Necklace,Accessories,Jewellery,Accessories Co.,103.07,2019-11-09,synthetic
+PROD-0102,Studio Organic Cotton Baby Bodysuit 3-Pack,Kids & Baby,Baby Clothing,Kids Co.,37.74,2020-02-23,synthetic
+PROD-0103,Coastal Hypoallergenic Baby Wash,Kids & Baby,Baby Care,Kids Co.,16.89,2023-02-28,synthetic
+PROD-0104,Everyday Silicone Feeding Bottle,Kids & Baby,Baby Care,Kids Co.,25.57,2022-02-05,synthetic
+PROD-0105,Signature Wooden Building Block Set,Kids & Baby,Toys,Kids Co.,40.33,2024-07-25,synthetic
+PROD-0106,Alpine STEM Robot Kit,Kids & Baby,Toys,Kids Co.,117.55,2023-03-26,synthetic
+PROD-0107,Coastal Soft Activity Cube,Kids & Baby,Toys,Kids Co.,34.44,2023-01-16,synthetic
+PROD-0108,Classic Kids Puffer Jacket,Kids & Baby,Kids Clothing,Kids Co.,100.27,2020-04-15,synthetic
+PROD-0109,Urban Velcro Trainers,Kids & Baby,Kids Footwear,Kids Co.,37.55,2023-12-22,synthetic
+PROD-0110,Lightweight Kids Puffer Jacket,Kids & Baby,Kids Clothing,Kids Co.,82.57,2019-12-11,synthetic
+PROD-0111,Organic Kids Puffer Jacket,Kids & Baby,Kids Clothing,Kids Co.,85.24,2024-10-13,synthetic
+PROD-0112,Classic Wooden Building Block Set,Kids & Baby,Toys,Kids Co.,51.57,2023-10-22,synthetic
+PROD-0113,Compact Soft Activity Cube,Kids & Baby,Toys,Kids Co.,27.52,2023-01-15,synthetic
+PROD-0114,Bold Wooden Building Block Set,Kids & Baby,Toys,Kids Co.,24.23,2023-05-11,synthetic

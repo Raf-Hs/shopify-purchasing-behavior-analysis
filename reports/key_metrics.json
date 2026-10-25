@@ -1,0 +1,34 @@
+{
+  "generated_at": "2026-10-25T18:45:26+00:00",
+  "database": "shopify_analysis.db",
+  "observation_window": {
+    "start": "2024-01-01",
+    "end": "2025-12-31"
+  },
+  "currency": "USD",
+  "data_origin": "synthetic",
+  "kpis": {
+    "total_net_revenue": 1681819.35,
+    "avg_order_value": 332.31,
+    "repeat_purchase_rate_pct": 40.94,
+    "eligible_orders": 5061,
+    "units_sold": 21602,
+    "unique_customers": 2008,
+    "repeat_customers": 822,
+    "avg_orders_per_customer": 2.52,
+    "gross_item_revenue": 1759900.43,
+    "discounts_given": 45116.84,
+    "effective_discount_pct": 2.56,
+    "refunds_given": 32964.24,
+    "effective_refund_pct": 1.87,
+    "top_product_name": "Essential Two Person Tent",
+    "top_product_revenue": 98870.65,
+    "top_product_units": 343
+  },
+  "filters": {
+    "start_date": "2024-01-01",
+    "end_date": "2025-12-31",
+    "category": null,
+    "segment": null
+  }
+}

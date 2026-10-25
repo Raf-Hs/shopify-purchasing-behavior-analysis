@@ -1,0 +1,94 @@
+defect_type,entity,entity_id,affected_order_id,detail
+duplicate_line_item,order_item,11571,ORD-003991,exact duplicate of an existing line in order ORD-003991
+duplicate_line_item,order_item,3026,ORD-001041,exact duplicate of an existing line in order ORD-001041
+duplicate_line_item,order_item,7265,ORD-002485,exact duplicate of an existing line in order ORD-002485
+duplicate_line_item,order_item,12804,ORD-004418,exact duplicate of an existing line in order ORD-004418
+duplicate_line_item,order_item,6705,ORD-002297,exact duplicate of an existing line in order ORD-002297
+duplicate_line_item,order_item,10406,ORD-003582,exact duplicate of an existing line in order ORD-003582
+duplicate_line_item,order_item,13400,ORD-004612,exact duplicate of an existing line in order ORD-004612
+duplicate_line_item,order_item,3732,ORD-001279,exact duplicate of an existing line in order ORD-001279
+duplicate_line_item,order_item,5770,ORD-001973,exact duplicate of an existing line in order ORD-001973
+duplicate_line_item,order_item,6062,ORD-002078,exact duplicate of an existing line in order ORD-002078
+duplicate_line_item,order_item,4829,ORD-001655,exact duplicate of an existing line in order ORD-001655
+duplicate_line_item,order_item,11968,ORD-004131,exact duplicate of an existing line in order ORD-004131
+duplicate_line_item,order_item,11169,ORD-003852,exact duplicate of an existing line in order ORD-003852
+duplicate_line_item,order_item,12772,ORD-004405,exact duplicate of an existing line in order ORD-004405
+orphan_product_reference,order_item,14284,ORD-004920,line in order ORD-004920 points at missing product PROD-9000
+orphan_product_reference,order_item,14384,ORD-004953,line in order ORD-004953 points at missing product PROD-9001
+orphan_product_reference,order_item,9378,ORD-003227,line in order ORD-003227 points at missing product PROD-9002
+orphan_product_reference,order_item,13195,ORD-004545,line in order ORD-004545 points at missing product PROD-9003
+orphan_product_reference,order_item,5389,ORD-001850,line in order ORD-001850 points at missing product PROD-9004
+orphan_product_reference,order_item,6377,ORD-002180,line in order ORD-002180 points at missing product PROD-9005
+orphan_product_reference,order_item,13535,ORD-004655,line in order ORD-004655 points at missing product PROD-9006
+orphan_product_reference,order_item,7790,ORD-002676,line in order ORD-002676 points at missing product PROD-9007
+orphan_product_reference,order_item,8816,ORD-003029,line in order ORD-003029 points at missing product PROD-9008
+orphan_order_reference,order_item,8706,ORD-002991,line was detached from order ORD-002991 and now points at ORD-9000
+orphan_order_reference,order_item,2346,ORD-000799,line was detached from order ORD-000799 and now points at ORD-9001
+orphan_order_reference,order_item,9570,ORD-003292,line was detached from order ORD-003292 and now points at ORD-9002
+orphan_order_reference,order_item,15179,ORD-005208,line was detached from order ORD-005208 and now points at ORD-9003
+orphan_order_reference,order_item,13896,ORD-004778,line was detached from order ORD-004778 and now points at ORD-9004
+orphan_order_reference,order_item,15545,ORD-005329,line was detached from order ORD-005329 and now points at ORD-9005
+null_quantity,order_item,5403,ORD-001854,quantity is NULL in order ORD-001854
+null_quantity,order_item,6431,ORD-002198,quantity is NULL in order ORD-002198
+null_quantity,order_item,2473,ORD-000844,quantity is NULL in order ORD-000844
+null_quantity,order_item,12139,ORD-004196,quantity is NULL in order ORD-004196
+null_quantity,order_item,3774,ORD-001293,quantity is NULL in order ORD-001293
+null_quantity,order_item,4022,ORD-001382,quantity is NULL in order ORD-001382
+null_quantity,order_item,2533,ORD-000868,quantity is NULL in order ORD-000868
+null_quantity,order_item,9986,ORD-003438,quantity is NULL in order ORD-003438
+negative_quantity,order_item,14272,ORD-004916,quantity is negative in order ORD-004916
+negative_quantity,order_item,8188,ORD-002808,quantity is negative in order ORD-002808
+negative_quantity,order_item,7176,ORD-002456,quantity is negative in order ORD-002456
+negative_quantity,order_item,13465,ORD-004633,quantity is negative in order ORD-004633
+negative_quantity,order_item,11520,ORD-003975,quantity is negative in order ORD-003975
+negative_quantity,order_item,5722,ORD-001956,quantity is negative in order ORD-001956
+negative_quantity,order_item,3539,ORD-001217,quantity is negative in order ORD-001217
+zero_quantity,order_item,1925,ORD-000653,quantity is zero in order ORD-000653
+zero_quantity,order_item,7490,ORD-002571,quantity is zero in order ORD-002571
+zero_quantity,order_item,7962,ORD-002732,quantity is zero in order ORD-002732
+zero_quantity,order_item,3468,ORD-001189,quantity is zero in order ORD-001189
+zero_quantity,order_item,9859,ORD-003388,quantity is zero in order ORD-003388
+null_unit_price,order_item,6023,ORD-002064,unit price is NULL in order ORD-002064
+null_unit_price,order_item,10557,ORD-003630,unit price is NULL in order ORD-003630
+null_unit_price,order_item,2967,ORD-001017,unit price is NULL in order ORD-001017
+null_unit_price,order_item,3416,ORD-001172,unit price is NULL in order ORD-001172
+null_unit_price,order_item,2598,ORD-000889,unit price is NULL in order ORD-000889
+null_unit_price,order_item,9088,ORD-003124,unit price is NULL in order ORD-003124
+non_positive_unit_price,order_item,12328,ORD-004257,unit price is 0.0 in order ORD-004257
+non_positive_unit_price,order_item,12100,ORD-004181,unit price is -42.84 in order ORD-004181
+non_positive_unit_price,order_item,14599,ORD-005030,unit price is 0.0 in order ORD-005030
+non_positive_unit_price,order_item,1326,ORD-000442,unit price is -82.57 in order ORD-000442
+non_positive_unit_price,order_item,668,ORD-000228,unit price is 0.0 in order ORD-000228
+non_positive_unit_price,order_item,11277,ORD-003893,unit price is -66.49 in order ORD-003893
+discount_amount_mismatch,order_item,6105,ORD-002092,stored discount_amount disagrees with discount_pct in order ORD-002092
+discount_amount_mismatch,order_item,11153,ORD-003846,stored discount_amount disagrees with discount_pct in order ORD-003846
+discount_amount_mismatch,order_item,7850,ORD-002693,stored discount_amount disagrees with discount_pct in order ORD-002693
+discount_amount_mismatch,order_item,4288,ORD-001481,stored discount_amount disagrees with discount_pct in order ORD-001481
+discount_amount_mismatch,order_item,12923,ORD-004458,stored discount_amount disagrees with discount_pct in order ORD-004458
+discount_amount_mismatch,order_item,3002,ORD-001031,stored discount_amount disagrees with discount_pct in order ORD-001031
+discount_amount_mismatch,order_item,10363,ORD-003567,stored discount_amount disagrees with discount_pct in order ORD-003567
+discount_amount_mismatch,order_item,9798,ORD-003370,stored discount_amount disagrees with discount_pct in order ORD-003370
+discount_amount_mismatch,order_item,8058,ORD-002763,stored discount_amount disagrees with discount_pct in order ORD-002763
+discount_amount_mismatch,order_item,3862,ORD-001326,stored discount_amount disagrees with discount_pct in order ORD-001326
+discount_amount_mismatch,order_item,3687,ORD-001265,stored discount_amount disagrees with discount_pct in order ORD-001265
+discount_amount_mismatch,order_item,11945,ORD-004124,stored discount_amount disagrees with discount_pct in order ORD-004124
+orphan_customer_reference,order,ORD-001844,ORD-001844,order points at missing customer CUST-9000
+orphan_customer_reference,order,ORD-004263,ORD-004263,order points at missing customer CUST-9001
+orphan_customer_reference,order,ORD-000273,ORD-000273,order points at missing customer CUST-9002
+orphan_customer_reference,order,ORD-000954,ORD-000954,order points at missing customer CUST-9003
+orphan_customer_reference,order,ORD-004981,ORD-004981,order points at missing customer CUST-9004
+orphan_customer_reference,order,ORD-000061,ORD-000061,order points at missing customer CUST-9005
+order_total_variance,order,ORD-000352,ORD-000352,stored total 249.17 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-003293,ORD-003293,stored total 666.91 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-001497,ORD-001497,stored total 394.9 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-004638,ORD-004638,stored total 168.32 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-005134,ORD-005134,stored total 401.23 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-003424,ORD-003424,stored total 361.31 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-001595,ORD-001595,stored total 108.86 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-000290,ORD-000290,stored total 53.42 does not equal subtotal + shipping + tax
+order_total_variance,order,ORD-001435,ORD-001435,stored total 654.01 does not equal subtotal + shipping + tax
+empty_completed_order,order,ORD-002509,ORD-002509,completed order with no line items at all
+empty_completed_order,order,ORD-001639,ORD-001639,completed order with no line items at all
+empty_completed_order,order,ORD-002201,ORD-002201,completed order with no line items at all
+empty_completed_order,order,ORD-002730,ORD-002730,completed order with no line items at all
+empty_completed_order,order,ORD-002462,ORD-002462,completed order with no line items at all

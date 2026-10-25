@@ -1,0 +1,15 @@
+# Core analysis stack (tested on Python 3.12.10, Windows 11)
+pandas==3.1.0
+numpy==2.5.4
+matplotlib==3.11.2
+
+# Dashboard
+streamlit==1.66.1
+plotly==7.1.0
+
+# Testing
+pytest==9.1.1
+
+# SQLite is in the Python standard library - no database server needed.
+# SQLAlchemy is not required: the project uses the stdlib sqlite3 driver
+# directly so the SQL can be read and run unmodified in any SQLite client.

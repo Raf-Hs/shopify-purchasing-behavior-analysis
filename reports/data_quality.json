@@ -1,0 +1,219 @@
+{
+  "generated_at": "2026-10-25T18:45:50+00:00",
+  "records_flagged": 97,
+  "high_severity": 62,
+  "unexplained_variances": 0,
+  "checks": [
+    {
+      "check_id": "DQ01",
+      "check_name": "Duplicate line items (same business key)",
+      "severity": "high",
+      "records_flagged": 14,
+      "resolution": "De-duplicated on (order_id, product_id, quantity, unit_price, discount_pct); lowest line_item_id kept"
+    },
+    {
+      "check_id": "DQ02",
+      "check_name": "Duplicate order records (same order_id)",
+      "severity": "high",
+      "records_flagged": 0,
+      "resolution": "De-duplicated on order_id; earliest record kept"
+    },
+    {
+      "check_id": "DQ03",
+      "check_name": "Line items with a missing order_id or product_id",
+      "severity": "high",
+      "records_flagged": 0,
+      "resolution": "Line dropped: no key to attribute the sale to"
+    },
+    {
+      "check_id": "DQ04",
+      "check_name": "Line items pointing at a non-existent order",
+      "severity": "high",
+      "records_flagged": 6,
+      "resolution": "Line dropped: the order does not exist"
+    },
+    {
+      "check_id": "DQ05",
+      "check_name": "Line items pointing at a non-existent product",
+      "severity": "high",
+      "records_flagged": 9,
+      "resolution": "Line dropped: the product does not exist, so it has no category"
+    },
+    {
+      "check_id": "DQ06",
+      "check_name": "Orders pointing at a non-existent customer",
+      "severity": "high",
+      "records_flagged": 6,
+      "resolution": "Order dropped: it cannot be attributed to a customer"
+    },
+    {
+      "check_id": "DQ07",
+      "check_name": "Line items with a NULL quantity",
+      "severity": "high",
+      "records_flagged": 8,
+      "resolution": "Line dropped: quantity is required to compute revenue"
+    },
+    {
+      "check_id": "DQ08",
+      "check_name": "Line items with a negative quantity",
+      "severity": "high",
+      "records_flagged": 7,
+      "resolution": "Line dropped: a negative quantity is a returns artefact, not a sale"
+    },
+    {
+      "check_id": "DQ09",
+      "check_name": "Line items with a zero quantity",
+      "severity": "medium",
+      "records_flagged": 5,
+      "resolution": "Line dropped: a zero-quantity line contributes no revenue"
+    },
+    {
+      "check_id": "DQ10",
+      "check_name": "Line items with a NULL unit price",
+      "severity": "high",
+      "records_flagged": 6,
+      "resolution": "Line dropped: price is required to compute revenue"
+    },
+    {
+      "check_id": "DQ11",
+      "check_name": "Line items with a non-positive unit price",
+      "severity": "high",
+      "records_flagged": 6,
+      "resolution": "Line dropped: a non-positive price would create negative revenue"
+    },
+    {
+      "check_id": "DQ12",
+      "check_name": "Line items with a discount_pct outside [0, 1)",
+      "severity": "medium",
+      "records_flagged": 0,
+      "resolution": "Line dropped: the discount rate is not interpretable"
+    },
+    {
+      "check_id": "DQ13",
+      "check_name": "Stored discount_amount inconsistent with discount_pct",
+      "severity": "medium",
+      "records_flagged": 3,
+      "resolution": "Recomputed from discount_pct; the stored column is treated as advisory"
+    },
+    {
+      "check_id": "DQ14",
+      "check_name": "Order total does not equal subtotal + shipping + tax",
+      "severity": "medium",
+      "records_flagged": 9,
+      "resolution": "Components are authoritative; the order total is reported as a variance only"
+    },
+    {
+      "check_id": "DQ15",
+      "check_name": "Completed orders with no valid line items",
+      "severity": "medium",
+      "records_flagged": 13,
+      "resolution": "Excluded from the eligible-order set: nothing to sell"
+    },
+    {
+      "check_id": "DQ16",
+      "check_name": "Orders with an unrecognised status",
+      "severity": "medium",
+      "records_flagged": 0,
+      "resolution": "Order dropped: the status cannot be classified as eligible or excluded"
+    },
+    {
+      "check_id": "DQ17",
+      "check_name": "Orders with an unparseable order_date",
+      "severity": "high",
+      "records_flagged": 0,
+      "resolution": "Order dropped: it cannot be placed in the observation window"
+    },
+    {
+      "check_id": "DQ18",
+      "check_name": "Orders outside the observation window",
+      "severity": "low",
+      "records_flagged": 0,
+      "resolution": "Excluded from the eligible-order set by the window rule"
+    },
+    {
+      "check_id": "DQ19",
+      "check_name": "Orders with a missing customer_id",
+      "severity": "high",
+      "records_flagged": 0,
+      "resolution": "Order dropped: revenue cannot be attributed to a customer"
+    },
+    {
+      "check_id": "DQ20",
+      "check_name": "Products with a NULL or non-positive list price",
+      "severity": "medium",
+      "records_flagged": 0,
+      "resolution": "Product dropped from the catalogue; it cannot carry revenue"
+    },
+    {
+      "check_id": "DQ21",
+      "check_name": "Refund allocation does not sum back to the order refund",
+      "severity": "high",
+      "records_flagged": 0,
+      "resolution": "Must be zero: the allocation rule assigns the rounding remainder to the last line"
+    },
+    {
+      "check_id": "DQ22",
+      "check_name": "Customers with a NULL or unparseable registration_date",
+      "severity": "low",
+      "records_flagged": 0,
+      "resolution": "Customer dropped from the customer dimension"
+    },
+    {
+      "check_id": "DQ23",
+      "check_name": "Stored is_first_order flag disagrees with the derived flag",
+      "severity": "low",
+      "records_flagged": 5,
+      "resolution": "Informational only: the analysis derives first-order status itself"
+    }
+  ],
+  "row_reconciliation": [
+    {
+      "layer": "raw order_items",
+      "rows": 15636
+    },
+    {
+      "layer": "distinct line business keys",
+      "rows": 15622
+    },
+    {
+      "layer": "staged order_items",
+      "rows": 15553
+    },
+    {
+      "layer": "fact order lines (eligible orders)",
+      "rows": 14729
+    },
+    {
+      "layer": "raw orders",
+      "rows": 5360
+    },
+    {
+      "layer": "staged orders",
+      "rows": 5354
+    },
+    {
+      "layer": "fact orders (eligible)",
+      "rows": 5061
+    },
+    {
+      "layer": "raw customers",
+      "rows": 2100
+    },
+    {
+      "layer": "staged customers",
+      "rows": 2100
+    },
+    {
+      "layer": "eligible customers (dimension)",
+      "rows": 2008
+    },
+    {
+      "layer": "raw products",
+      "rows": 114
+    },
+    {
+      "layer": "staged products",
+      "rows": 114
+    }
+  ]
+}
