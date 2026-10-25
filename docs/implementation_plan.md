@@ -1,6 +1,11 @@
 # Implementation plan
 
-Short plan written before any code, kept for auditability.
+Two plans live here: the original one (written before any code) and the
+recovery plan written after the interrupted session was restarted.
+
+---
+
+## Part 1 — Original plan (written before any code, kept for auditability)
 
 ## Constraints discovered during repository inspection
 
@@ -50,7 +55,7 @@ Short plan written before any code, kept for auditability.
 
 ---
 
-## Deviations from the plan (recorded after the build)
+## Part 2 — Deviations from the original plan (recorded after the build)
 
 The plan above was written before any code. Four things changed during the
 build, and each change was forced by a measurement rather than a preference.
@@ -72,10 +77,45 @@ Two additions that the plan did not anticipate:
   the page over HTTP, because a passing unit test on the KPI functions says
   nothing about whether the application starts.
 
-### Final test results
+---
+
+## Part 3 — Recovery plan (second session)
+
+The first session was interrupted while adding a *Retention opportunity* view of
+the data. It left the workspace in a mid-edit state: a concurrent process was
+still writing files while the tests were being run, so the same test failed
+with two different errors on consecutive runs.
+
+### What was found on restart
+
+| Finding | Evidence |
+|---|---|
+| A second, orphaned `opencode` session was still running and editing the repo | `dashboard/app.py` mtime moved between two test runs; the failure changed from `KeyError: 'basket_order'` to `KeyError: 'dark'` |
+| The orphan had been killed mid-write | `PALETTE["dark"]` referenced a colour that was never added to the palette |
+| The new *Retention opportunity* tab **replaced** the *Customers* tab rather than joining it | `tabs` went from 5 to 5 entries; segment distribution, orders-per-customer and time-between-purchases were dropped |
+| `reports/sql_results.md` was stale | Written at 12:45, before the seven retention queries landed at 13:22 |
+| The README query count was already wrong at the previous commit | Claimed "33 named SQL queries" / "22 analysis queries"; the files hold 29 analysis + 11 validation = **40** |
+| A broken documentation link | The dashboard's Methodology tab pointed at `reports/decision_report.md`, which does not exist |
+
+### Recovery steps
+
+| # | Step | Done |
+|---|---|---|
+| 1 | Terminate the orphaned session and its in-flight child processes so the tree stops moving | ✔ |
+| 2 | Re-establish a stable baseline: run the full suite and record the real failures | ✔ |
+| 3 | Fix the palette bug that crashed the dashboard on the Revenue tab | ✔ |
+| 4 | Restore the *Customers* tab **and** keep the new *Retention opportunity* tab (6 tabs), so nothing required by the brief is lost | ✔ |
+| 5 | Fix the broken report link in the Methodology tab | ✔ |
+| 6 | Audit every query/column the dashboard depends on against the SQL library | ✔ |
+| 7 | Regenerate every derived artefact: `sql_results.md`, `key_metrics.json`, `data_quality.md`, figures | ✔ |
+| 8 | Correct the README's query, tab, figure and test counts | ✔ |
+| 9 | Extend the report and README with the retention findings | ✔ |
+| 10 | Run the full suite and the live server smoke test to green | ✔ |
+
+### Final state
 
 ```
-46 passed in 76.18s
+58 passed
 ```
 
 Run with `pytest -q` from the project root.

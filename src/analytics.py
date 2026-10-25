@@ -28,6 +28,7 @@ from config import (
     SEGMENT_LOW,
     SEGMENT_ORDER,
     SEGMENT_REGULAR,
+    render_sql,
 )
 
 HEADER = re.compile(r"^-- name:\s*(\S+)\s*$", re.MULTILINE)
@@ -40,18 +41,6 @@ class Query:
     description: str
     sql: str
     source: Path
-
-
-def render_sql(text: str) -> str:
-    """Substitute the observation-window tokens from config.
-
-    The window is defined once in `src/config.py` and injected into the SQL at
-    build and run time, so the SQL and the Python code cannot drift apart.
-    """
-    return (
-        text.replace("{{PERIOD_START}}", PERIOD_START)
-            .replace("{{PERIOD_END}}", PERIOD_END)
-    )
 
 
 def parse_named_queries(text: str, source: Path) -> list[Query]:

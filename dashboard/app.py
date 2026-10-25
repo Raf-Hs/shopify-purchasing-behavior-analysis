@@ -30,17 +30,16 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 from analytics import (  # noqa: E402
     available_filters,
     connect,
-    filter_params,
     kpi_bundle,
     load_query_library,
     run_query,
 )
 from config import (  # noqa: E402
     DB_PATH,
+    PALETTE,
     PERIOD_END,
     PERIOD_START,
     SEGMENT_COLORS,
-    SEGMENT_ORDER,
 )
 
 # ---------------------------------------------------------------------------
@@ -53,20 +52,10 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-PALETTE = {
-    "navy": "#1f3b57",
-    "teal": "#2a9d8f",
-    "sand": "#e9c46a",
-    "orange": "#f4a261",
-    "red": "#e76f51",
-    "grey": "#8d99ae",
-    "light": "#f4f1ec",
-}
 CATEGORY_SEQUENCE = [
     PALETTE["navy"], PALETTE["teal"], PALETTE["sand"], PALETTE["orange"],
     PALETTE["red"], PALETTE["grey"], "#577590", "#43aa8b",
 ]
-
 st.markdown(
     """
     <style>
@@ -79,6 +68,10 @@ st.markdown(
                    color: #6b7280; margin-bottom: 2px; }
       .kpi-value { font-size: 1.65rem; font-weight: 700; color: #1f3b57; line-height: 1.15; }
       .kpi-sub   { font-size: 0.80rem; color: #6b7280; margin-top: 2px; }
+      .answer-box {
+          background: #eef5f4; border-left: 4px solid #2a9d8f; border-radius: 4px;
+          padding: 12px 16px; margin-bottom: 14px; font-size: 0.95rem; color: #1f3b57;
+      }
       div[data-testid="stMetricValue"] { font-size: 1.55rem; }
     </style>
     """,
@@ -256,16 +249,270 @@ with cols[4]:
 st.divider()
 
 tabs = st.tabs(
-    ["Revenue", "Products", "Customers", "Data quality", "Methodology"]
+    [
+        "Retention opportunity",
+        "Revenue",
+        "Products",
+        "Customers",
+        "Data quality",
+        "Methodology",
+    ]
 )
 
 # ---------------------------------------------------------------------------
-# TAB 1 - Revenue
+# TAB 1 - RETENTION OPPORTUNITY
 # ---------------------------------------------------------------------------
 with tabs[0]:
+    propensity = query("repeat_propensity_by_first_order", params_key)
+    concentration = query("revenue_concentration", params_key)
+    curve = query("revenue_concentration_curve", params_key)
+    repeat_profile = query("repeat_vs_single_customer_profile", params_key)
+    aov = query("aov_by_segment", params_key)
+    profile = query("segment_profile", params_key)
+    one_time = query("one_time_buyer_profile", params_key)
+    gap = query("first_repeat_gap", params_key)
+
+    if propensity.empty or repeat_profile.empty:
+        st.info("No eligible orders in the selected range.")
+    else:
+        one_time_row = repeat_profile[
+            repeat_profile["customer_type"] == "One-time customer"
+        ].iloc[0]
+        repeat_row = repeat_profile[
+            repeat_profile["customer_type"] == "Repeat customer"
+        ].iloc[0]
+        value_multiple = (
+            repeat_row["avg_revenue_per_customer"] / one_time_row["avg_revenue_per_customer"]
+        )
+
+        st.markdown(
+            f"""
+<div class="answer-box">
+<b>The opportunity:</b> {int(one_time_row['customers']):,} of {k['unique_customers']:,} customers
+({100 * one_time_row['customers'] / k['unique_customers']:.0f}%) bought once and never came back.
+They hold {100 * one_time_row['customers'] / k['unique_customers']:.0f}% of the customers but only a
+fifth of the revenue, while a customer who does repeat is worth
+<b>{value_multiple:.1f}x</b> as much ({money(repeat_row['avg_revenue_per_customer'])} vs
+{money(one_time_row['avg_revenue_per_customer'])}).
+The store does not have a traffic problem - it has a
+<b>second-purchase problem</b>.
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        gap_row = gap.iloc[0] if not gap.empty else None
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("One-time buyers", f"{int(one_time_row['customers']):,}",
+                  f"{100 * one_time_row['customers'] / k['unique_customers']:.0f}% of all customers")
+        m2.metric("Value of a repeat buyer", money(repeat_row["avg_revenue_per_customer"]),
+                  f"vs {money(one_time_row['avg_revenue_per_customer'])} for a one-time buyer")
+        m3.metric(
+            "Revenue concentration (Gini)",
+            f"{float(concentration.iloc[0]['gini_coefficient']):.2f}"
+            if not concentration.empty else "-",
+            "0 = perfectly even, 1 = one customer holds everything",
+        )
+        m4.metric("Median time to a second order",
+                  f"{gap_row['median_gap_days']:.0f} days" if gap_row is not None else "-",
+                  "the campaign clock, not the 56-day all-repeat average")
+
+        left, right = st.columns(2)
+
+        with left:
+            st.subheader("The size of a customer's first order predicts whether they return")
+            d = propensity.sort_values("basket_order")
+            fig = px.bar(
+                d,
+                x="first_order_basket",
+                y="repeat_rate_pct",
+                color="repeat_rate_pct",
+                color_continuous_scale=[PALETTE["red"], PALETTE["sand"], PALETTE["teal"], PALETTE["navy"]],
+                labels={
+                    "first_order_basket": "Size of the first order",
+                    "repeat_rate_pct": "Customers who placed a second order (%)",
+                },
+                custom_data=["customers", "one_time_customers", "avg_lifetime_revenue",
+                             "avg_orders_per_customer"],
+            )
+            fig.update_traces(
+                text=[f"{v:.1f}%" for v in d["repeat_rate_pct"]],
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{x} in the first order</b><br>Repeat rate: %{y:.1f}%"
+                    "<br>%{customdata[0]:,} customers (%{customdata[1]:,} never repeated)"
+                    "<br>$%{customdata[2]:,.0f} lifetime revenue"
+                    "<br>%.2f orders each<extra></extra>"
+                ),
+            )
+            fig.update_layout(
+                margin={"l": 10, "r": 10, "t": 10, "b": 10},
+                height=320,
+                coloraxis_colorbar_title="Repeat rate",
+                xaxis_title="Size of the customer's first order",
+                yaxis_title="Customers who placed a second order (%)",
+            )
+            st.plotly_chart(fig, width="stretch")
+
+        with right:
+            st.subheader("Revenue is concentrated in a small cohort")
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=[0, 100], y=[0, 100], mode="lines", name="Perfectly even revenue",
+                line={"color": PALETTE["grey"], "dash": "dash"},
+            ))
+            fig.add_trace(go.Scatter(
+                x=curve["cumulative_customer_pct"], y=curve["cumulative_revenue_pct"],
+                mode="lines+markers", name="Actual concentration",
+                line={"color": PALETTE["navy"], "width": 2.5},
+                marker={"size": 6},
+                fill="tozeroy", fillcolor="rgba(233,196,106,0.22)",
+                hovertemplate="Top %{x:.0f}% of customers hold %{y:.1f}% of revenue<extra></extra>",
+            ))
+            fig.update_layout(
+                margin={"l": 10, "r": 10, "t": 10, "b": 10},
+                height=320,
+                xaxis_title="Customers, ranked by revenue (cumulative %)",
+                yaxis_title="Revenue (cumulative %)",
+                legend={"orientation": "h", "y": -0.22},
+            )
+            st.plotly_chart(fig, width="stretch")
+            if not concentration.empty:
+                conc = concentration.iloc[0]
+                st.caption(
+                    f"The top 10% of customers hold "
+                    f"{conc['top_10pct_customers_revenue_pct']:.1f}% of revenue; "
+                    f"the top 20% hold {conc['top_20pct_customers_revenue_pct']:.1f}%. "
+                    "Losing a small cohort would cost a large share of revenue."
+                )
+
+        left, right = st.columns(2)
+
+        with left:
+            st.subheader("What a repeat buyer is worth")
+            d = repeat_profile.sort_values("avg_revenue_per_customer")
+            fig = px.bar(
+                d,
+                x="customer_type",
+                y="avg_revenue_per_customer",
+                color="customer_type",
+                color_discrete_sequence=[PALETTE["grey"], PALETTE["teal"]],
+                labels={
+                    "customer_type": "",
+                    "avg_revenue_per_customer": "Average revenue per customer (USD)",
+                },
+                custom_data=["customers", "avg_orders", "avg_order_value", "avg_categories"],
+            )
+            fig.update_traces(
+                text=[money(v) for v in d["avg_revenue_per_customer"]],
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{x}</b><br>Avg revenue/customer: $%{y:,.0f}"
+                    "<br>%{customdata[0]:,} customers · %{customdata[1]:.2f} orders each"
+                    "<br>$%{customdata[2]:,.0f} AOV · %{customdata[3]:.2f} categories<extra></extra>"
+                ),
+            )
+            fig.update_layout(
+                margin={"l": 10, "r": 10, "t": 10, "b": 10},
+                height=300,
+                showlegend=False,
+                yaxis_title="Average revenue per customer (USD)",
+                xaxis_title=None,
+            )
+            st.plotly_chart(fig, width="stretch")
+
+        with right:
+            st.subheader("Which segments to target")
+            if aov.empty:
+                st.info("No eligible orders in the selected range.")
+            else:
+                d = aov.sort_values("avg_order_value")
+                fig = px.bar(
+                    d,
+                    x="avg_order_value",
+                    y="segment",
+                    orientation="h",
+                    color="segment",
+                    color_discrete_map=SEGMENT_COLORS,
+                    labels={"avg_order_value": "Average order value (USD)", "segment": ""},
+                    custom_data=["orders", "customers", "revenue_per_customer",
+                                 "pct_of_revenue", "units_per_order"],
+                )
+                fig.update_traces(
+                    text=[f"${v:,.0f}" for v in d["avg_order_value"]],
+                    textposition="outside",
+                    hovertemplate=(
+                        "<b>%{y}</b><br>AOV: $%{x:,.2f}"
+                        "<br>%{customdata[0]:,} orders · %{customdata[1]:,} customers"
+                        "<br>$%{customdata[2]:,.0f} per customer"
+                        "<br>%{customdata[3]:.2f}% of revenue"
+                        "<br>%.2f units per order<extra></extra>"
+                    ),
+                )
+                fig.update_layout(
+                    margin={"l": 10, "r": 40, "t": 10, "b": 10},
+                    height=300,
+                    showlegend=False,
+                    xaxis_title="Average order value (USD)",
+                    yaxis_title=None,
+                )
+                st.plotly_chart(fig, width="stretch")
+
+        st.subheader("What one-time buyers bought - the categories to offer them again")
+        if one_time.empty:
+            st.info("No eligible orders in the selected range.")
+        else:
+            st.dataframe(
+                one_time[
+                    ["category", "one_time_customers", "one_time_revenue",
+                     "one_time_aov", "units_per_order"]
+                ],
+                hide_index=True,
+                width="stretch",
+                column_config={
+                    "one_time_revenue": st.column_config.NumberColumn("Net revenue", format="$%.2f"),
+                    "one_time_aov": st.column_config.NumberColumn("AOV", format="$%.2f"),
+                    "units_per_order": st.column_config.NumberColumn("Units / order", format="%.2f"),
+                    "one_time_customers": st.column_config.NumberColumn("Customers", format="%d"),
+                },
+            )
+
+        st.subheader("Segment scorecard")
+        if not profile.empty:
+            st.dataframe(
+                profile[
+                    [
+                        "segment", "customers", "pct_of_customers", "net_revenue",
+                        "pct_of_revenue", "avg_orders_per_customer",
+                        "avg_revenue_per_customer", "avg_order_value",
+                        "avg_units_per_customer", "avg_categories", "repeat_customer_pct",
+                    ]
+                ],
+                hide_index=True,
+                width="stretch",
+                column_config={
+                    "net_revenue": st.column_config.NumberColumn("Net revenue", format="$%.2f"),
+                    "pct_of_revenue": st.column_config.NumberColumn("% of revenue", format="%.2f%%"),
+                    "pct_of_customers": st.column_config.NumberColumn("% of customers", format="%.2f%%"),
+                    "avg_orders_per_customer": st.column_config.NumberColumn("Avg orders", format="%.2f"),
+                    "avg_revenue_per_customer": st.column_config.NumberColumn("Avg revenue / customer", format="$%.2f"),
+                    "avg_order_value": st.column_config.NumberColumn("AOV", format="$%.2f"),
+                    "avg_units_per_customer": st.column_config.NumberColumn("Avg units", format="%.2f"),
+                    "avg_categories": st.column_config.NumberColumn("Avg categories", format="%.2f"),
+                    "repeat_customer_pct": st.column_config.NumberColumn("Repeat customers", format="%.2f%%"),
+                    "customers": st.column_config.NumberColumn("Customers", format="%d"),
+                },
+            )
+
+# ---------------------------------------------------------------------------
+# TAB 2 - Revenue
+# ---------------------------------------------------------------------------
+with tabs[1]:
     monthly = query("monthly_revenue_trend", params_key)
     by_category = query("revenue_by_category", params_key)
     bridge = query("revenue_bridge", params_key)
+    growth = query("revenue_growth_decomposition", params_key)
+    tenure = query("orders_by_customer_tenure", params_key)
 
     left, right = st.columns([2, 1])
 
@@ -319,6 +566,75 @@ with tabs[0]:
             yaxis_title="USD",
         )
         st.plotly_chart(fig, width="stretch")
+
+    st.subheader("What explains the change in revenue")
+    if growth.empty or growth.iloc[-1]["customers_yoy_pct"] is None:
+        st.info("A year-on-year comparison needs at least two years of data in the selection.")
+    else:
+        latest = growth.iloc[-1]
+        factors = [
+            ("Customers", latest["customers_yoy_pct"], PALETTE["teal"]),
+            ("Orders per customer", latest["frequency_yoy_pct"], PALETTE["red"]),
+            ("Average order value", latest["aov_yoy_pct"], PALETTE["red"]),
+        ]
+        fig = px.bar(
+            [f[0] for f in factors], [f[1] for f in factors],
+            labels={"x": "", "y": "Change year on year (%)"},
+            color=[f[2] for f in factors],
+        )
+        fig.update_traces(
+            text=[f"{v:+.1f}%" for _, v, _ in factors], textposition="outside",
+            hovertemplate="<b>%{x}</b><br>%{y:+.1f}% year on year<extra></extra>",
+        )
+        fig.add_hline(y=0, line_color=PALETTE["dark"], line_width=1)
+        fig.update_layout(
+            margin={"l": 10, "r": 10, "t": 10, "b": 10},
+            height=300,
+            showlegend=False,
+        )
+        st.plotly_chart(fig, width="stretch")
+        st.caption(
+            f"Revenue grew {latest['revenue_yoy_pct']:.1f}%. That is customers "
+            f"{latest['customers_yoy_pct']:+.1f}%, orders per customer "
+            f"{latest['frequency_yoy_pct']:+.1f}% and average order value "
+            f"{latest['aov_yoy_pct']:+.1f}% - and the three factors reproduce the "
+            f"total to {latest['implied_revenue_yoy_pct']:.1f}%."
+        )
+
+        if not tenure.empty:
+            d = tenure.copy()
+            d["label"] = d["order_year"] + " - " + d["order_type"].map(
+                lambda s: "acquisition year" if s.startswith("Acquisition") else "existing customer"
+            )
+            fig = px.bar(
+                d, x="label", y="orders_per_customer",
+                color="order_type", color_discrete_sequence=[PALETTE["sand"], PALETTE["navy"]],
+                labels={
+                    "label": "", "orders_per_customer": "Orders per customer",
+                    "order_type": "",
+                },
+                custom_data=["customers", "orders"],
+            )
+            fig.update_traces(
+                text=[f"{v:.2f}" for v in d["orders_per_customer"]],
+                textposition="outside",
+                hovertemplate=(
+                    "<b>%{x}</b><br>%{y:.2f} orders per customer"
+                    "<br>%{customdata[0]:,} customers · %{customdata[1]:,} orders<extra></extra>"
+                ),
+            )
+            fig.update_layout(
+                margin={"l": 10, "r": 10, "t": 10, "b": 10},
+                height=320,
+                legend={"orientation": "h", "y": -0.2},
+                yaxis_title="Orders per customer",
+            )
+            st.plotly_chart(fig, width="stretch")
+            st.caption(
+                "A fall in the blended average is not the same as worse customers: "
+                "the cohort carried over from the previous year bought more, while a "
+                "much larger new cohort of mostly one-time buyers dilutes the average."
+            )
 
     st.subheader("Revenue by product category")
     if by_category.empty:
@@ -374,10 +690,11 @@ with tabs[0]:
             },
         )
 
+
 # ---------------------------------------------------------------------------
-# TAB 2 - Products
+# TAB 3 - Products
 # ---------------------------------------------------------------------------
-with tabs[1]:
+with tabs[2]:
     top_rev = query("top_products_by_revenue", params_key)
     top_units = query("top_products_by_units", params_key)
     dilutive = query("high_volume_low_revenue_products", params_key)
@@ -480,56 +797,23 @@ with tabs[1]:
             },
         )
 
+
 # ---------------------------------------------------------------------------
-# TAB 3 - Customers
+# TAB 4 - Customers
 # ---------------------------------------------------------------------------
-with tabs[2]:
-    aov = query("aov_by_segment", params_key)
+with tabs[3]:
     distribution = query("segment_distribution", params_key)
-    profile = query("segment_profile", params_key)
-    repeat = query("repeat_vs_single_customer_profile", params_key)
     orders_dist = query("order_count_distribution", params_key)
     gaps = query("interpurchase_interval", params_key)
 
     left, right = st.columns(2)
 
     with left:
-        st.subheader("Average order value by customer segment")
-        if aov.empty:
-            st.info("No eligible orders in the selected range.")
-        else:
-            d = aov.sort_values("avg_order_value")
-            fig = px.bar(
-                d,
-                x="avg_order_value",
-                y="segment",
-                orientation="h",
-                color="segment",
-                color_discrete_map=SEGMENT_COLORS,
-                labels={"avg_order_value": "Average order value (USD)", "segment": ""},
-                custom_data=["orders", "customers", "revenue_per_customer", "pct_of_revenue"],
-            )
-            fig.update_traces(
-                text=[f"${v:,.0f}" for v in d["avg_order_value"]],
-                textposition="outside",
-                hovertemplate=(
-                    "<b>%{y}</b><br>AOV: $%{x:,.2f}"
-                    "<br>%{customdata[0]:,} orders · %{customdata[1]:,} customers"
-                    "<br>$%{customdata[2]:,.0f} per customer"
-                    "<br>%{customdata[3]:.2f}% of revenue<extra></extra>"
-                ),
-            )
-            fig.update_layout(
-                margin={"l": 10, "r": 40, "t": 10, "b": 10},
-                height=300,
-                showlegend=False,
-                xaxis_title="Average order value (USD)",
-                yaxis_title=None,
-            )
-            st.plotly_chart(fig, width="stretch")
-
-    with right:
         st.subheader("Customer segment distribution")
+        st.caption(
+            "Customers and revenue by segment. Hover the revenue legend entry to "
+            "switch the rings from customers to revenue."
+        )
         if distribution.empty:
             st.info("No eligible orders in the selected range.")
         else:
@@ -559,49 +843,17 @@ with tabs[2]:
             )
             fig.update_layout(
                 margin={"l": 10, "r": 10, "t": 10, "b": 10},
-                height=300,
+                height=320,
                 showlegend=True,
                 legend_title_text="",
             )
             st.plotly_chart(fig, width="stretch")
-
-    left, right = st.columns(2)
-
-    with left:
-        st.subheader("Repeat vs one-time customers")
-        if repeat.empty:
-            st.info("No eligible orders in the selected range.")
-        else:
-            d = repeat.sort_values("avg_revenue_per_customer")
-            fig = px.bar(
-                d,
-                x="customer_type",
-                y="avg_revenue_per_customer",
-                color="customer_type",
-                color_discrete_sequence=[PALETTE["grey"], PALETTE["teal"]],
-                labels={
-                    "customer_type": "",
-                    "avg_revenue_per_customer": "Average revenue per customer (USD)",
-                },
-                custom_data=["customers", "avg_orders", "avg_order_value", "avg_categories"],
+            top = distribution.sort_values("net_revenue", ascending=False).iloc[0]
+            st.caption(
+                f"{top['segment']} holds {top['pct_of_customers']:.1f}% of the "
+                f"customers but {top['pct_of_revenue']:.1f}% of the revenue - "
+                f"${top['revenue_per_customer']:,.0f} per customer."
             )
-            fig.update_traces(
-                text=[money(v) for v in d["avg_revenue_per_customer"]],
-                textposition="outside",
-                hovertemplate=(
-                    "<b>%{x}</b><br>Avg revenue/customer: $%{y:,.0f}"
-                    "<br>%{customdata[0]:,} customers · %{customdata[1]:.2f} orders each"
-                    "<br>$%{customdata[2]:,.0f} AOV · %{customdata[3]:.2f} categories<extra></extra>"
-                ),
-            )
-            fig.update_layout(
-                margin={"l": 10, "r": 10, "t": 10, "b": 10},
-                height=300,
-                showlegend=False,
-                yaxis_title="Average revenue per customer (USD)",
-                xaxis_title=None,
-            )
-            st.plotly_chart(fig, width="stretch")
 
     with right:
         st.subheader("Orders per customer")
@@ -630,55 +882,37 @@ with tabs[2]:
             )
             fig.update_layout(
                 margin={"l": 10, "r": 10, "t": 10, "b": 10},
-                height=300,
+                height=320,
                 coloraxis_colorbar_title="% of customers",
                 xaxis_title="Orders placed",
                 yaxis_title="Customers",
             )
             st.plotly_chart(fig, width="stretch")
 
-    st.subheader("Segment scorecard")
-    if profile.empty:
-        st.info("No eligible orders in the selected range.")
+    st.subheader("Time between purchases")
+    st.caption(
+        "Measured between consecutive eligible orders of the same customer, "
+        "inside the observation window only."
+    )
+    if gaps.empty:
+        st.info("No repeat orders in the selected range.")
     else:
-        st.dataframe(
-            profile[
-                [
-                    "segment", "customers", "pct_of_customers", "net_revenue",
-                    "pct_of_revenue", "avg_orders_per_customer",
-                    "avg_revenue_per_customer", "avg_order_value",
-                    "avg_units_per_customer", "avg_categories", "repeat_customer_pct",
-                ]
-            ],
-            hide_index=True,
-            width="stretch",
-            column_config={
-                "net_revenue": st.column_config.NumberColumn("Net revenue", format="$%.2f"),
-                "pct_of_revenue": st.column_config.NumberColumn("% of revenue", format="%.2f%%"),
-                "pct_of_customers": st.column_config.NumberColumn("% of customers", format="%.2f%%"),
-                "avg_orders_per_customer": st.column_config.NumberColumn("Avg orders", format="%.2f"),
-                "avg_revenue_per_customer": st.column_config.NumberColumn("Avg revenue / customer", format="$%.2f"),
-                "avg_order_value": st.column_config.NumberColumn("AOV", format="$%.2f"),
-                "avg_units_per_customer": st.column_config.NumberColumn("Avg units", format="%.2f"),
-                "avg_categories": st.column_config.NumberColumn("Avg categories", format="%.2f"),
-                "repeat_customer_pct": st.column_config.NumberColumn("Repeat customers", format="%.2f%%"),
-                "customers": st.column_config.NumberColumn("Customers", format="%d"),
-            },
-        )
-
-    if not gaps.empty:
-        st.subheader("Time between purchases")
         g = gaps.iloc[0]
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Median gap between orders", f"{g['median_gap_days']:.0f} days")
         c2.metric("Mean gap between orders", f"{g['avg_gap_days']:.0f} days")
         c3.metric("Repeats within 30 days", f"{g['pct_repeat_within_30_days']:.1f}%")
         c4.metric("Repeats within 90 days", f"{g['pct_repeat_within_90_days']:.1f}%")
+        st.caption(
+            "The mean sits far above the median because of a long dormant tail - "
+            "customers who come back after six months or more."
+        )
+
 
 # ---------------------------------------------------------------------------
-# TAB 4 - Data quality
+# TAB 5 - Data quality
 # ---------------------------------------------------------------------------
-with tabs[3]:
+with tabs[4]:
     dq = query("dq_summary", (PERIOD_START, PERIOD_END, None, None))
     recon = query("dq_row_reconciliation", (PERIOD_START, PERIOD_END, None, None))
     status = query("dq_reconciliation_explained", (PERIOD_START, PERIOD_END, None, None))
@@ -721,9 +955,9 @@ with tabs[3]:
             st.dataframe(status, hide_index=True, width="stretch")
 
 # ---------------------------------------------------------------------------
-# TAB 5 - Methodology
+# TAB 6 - Methodology
 # ---------------------------------------------------------------------------
-with tabs[4]:
+with tabs[5]:
     st.subheader("How these numbers are produced")
     st.markdown(
         """
@@ -750,10 +984,12 @@ indistinguishable from a one-time buyer here.
 
 **Filters** — the date filter applies at order level, the category filter at
 line level, and the segment filter at customer level. Segments are computed
-once on the full population and are not recomputed when a filter changes.
+once on the full population and are not recomputed when a filter changes. The
+repeat purchase rate is recomputed inside the filtered selection, so it can
+differ from the unfiltered headline.
         """
     )
     st.caption(
         "Full definitions: `docs/methodology.md`. Query-by-query output: "
-        "`reports/sql_results.md`. Business write-up: `reports/business_analysis.md`."
+        "`reports/sql_results.md`. Decision report: `reports/business_analysis.md`."
     )

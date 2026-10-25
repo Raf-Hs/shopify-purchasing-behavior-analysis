@@ -104,7 +104,7 @@ WITH ranked AS (
     WHERE o.order_id IS NOT NULL
       AND TRIM(o.order_id) <> ''
       AND DATE(o.order_date) IS NOT NULL
-      AND o.order_status IN ('completed', 'cancelled', 'refunded', 'pending')
+      AND o.order_status IN ('{{ELIGIBLE_ORDER_STATUS}}', 'cancelled', 'refunded', 'pending')
 )
 SELECT
     r.order_id, r.customer_id, r.order_date, r.order_month, r.order_status,

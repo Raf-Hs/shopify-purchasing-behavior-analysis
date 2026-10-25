@@ -20,12 +20,11 @@ from config import (
     DEFECTS_CSV,
     ORDER_ITEMS_CSV,
     ORDERS_CSV,
-    PERIOD_END,
-    PERIOD_START,
     PRODUCTS_CSV,
     SCHEMA_SQL,
     STAGING_SQL,
     MARTS_SQL,
+    render_sql,
 )
 
 TABLES = {
@@ -83,20 +82,6 @@ def read_csv(path: Path, columns: list[str]) -> list[tuple]:
     return rows
 
 
-def _render(sql_path: Path) -> str:
-    """Substitute the observation-window tokens from config.
-
-    The window lives in exactly one place (`src/config.py`) and is injected
-    into the SQL at build time, so the analysis SQL and the Python code can
-    never drift apart.
-    """
-    text = sql_path.read_text(encoding="utf-8")
-    return (
-        text.replace("{{PERIOD_START}}", PERIOD_START)
-            .replace("{{PERIOD_END}}", PERIOD_END)
-    )
-
-
 def main() -> None:
     if DB_PATH.exists():
         DB_PATH.unlink()
@@ -106,7 +91,7 @@ def main() -> None:
     con = sqlite3.connect(DB_PATH)
     try:
         con.execute("PRAGMA foreign_keys = OFF")
-        con.executescript(_render(SCHEMA_SQL))
+        con.executescript(render_sql(SCHEMA_SQL.read_text(encoding="utf-8")))
 
         for table, (path, columns) in TABLES.items():
             placeholders = ", ".join(["?"] * len(columns))
@@ -114,9 +99,9 @@ def main() -> None:
             con.executemany(sql, payloads[table])
 
         con.commit()
-        con.executescript(_render(STAGING_SQL))
+        con.executescript(render_sql(STAGING_SQL.read_text(encoding="utf-8")))
         con.commit()
-        con.executescript(_render(MARTS_SQL))
+        con.executescript(render_sql(MARTS_SQL.read_text(encoding="utf-8")))
         con.commit()
 
         integrity = con.execute("PRAGMA integrity_check").fetchone()[0]

@@ -240,7 +240,7 @@ still reported per customer.
 $288,292.65 (17.14%) and Sports & Outdoors at $270,709.16 (16.10%). The top
 three are 50.93% of revenue on 37.53% of units.
 
-![Revenue by category](figures/02_revenue_by_category.png)
+![Revenue by category](figures/03_revenue_by_category.png)
 
 **The revenue-per-unit spread is the interesting part.** Category revenue share
 and unit share diverge sharply:
@@ -256,7 +256,7 @@ and unit share diverge sharply:
 | Kids & Baby | 7.06% | 12.74% | **−5.68 pts** | $43.16 |
 | Beauty | 6.42% | 12.81% | **−6.40 pts** | $39.00 |
 
-![Revenue share vs unit share](figures/09_share_vs_units.png)
+![Revenue share vs unit share](figures/12_revenue_vs_unit_share.png)
 
 Beauty and Kids & Baby together are **25.55% of units and 13.48% of revenue**.
 They are bought constantly and are worth very little each.
@@ -266,7 +266,7 @@ $98,870.65 (5.88% of revenue, $288.25 per unit). *Classic Sterling Silver
 Chain Necklace* is second by revenue ($86,320.01) and first by volume (1,008
 units).
 
-![Top products by revenue](figures/03_top_products.png)
+![Top products by revenue](figures/04_top_products.png)
 
 **Product concentration is low.** The top 10 products together are 36.97% of
 revenue and the single best product is under 6%. No single product is a
@@ -282,7 +282,7 @@ single point of failure — but the same is true of the *dilutive* products:
 
 Four of the five worst are Beauty or Kids & Baby.
 
-![High volume, low revenue](figures/10_high_volume_low_revenue.png)
+![High volume, low revenue](figures/13_dilutive_products.png)
 
 ### 6.2 How does revenue trend over time?
 
@@ -315,7 +315,7 @@ peak month in both years ($71,599.39 and $150,845.28).
 | High Value | 3,531 | 669 | $360.72 | **5.28** | **4.57** | **$1,903.91** | **75.73%** |
 | Low Engagement | 670 | 670 | $135.82 | 1.00 | 2.37 | $135.82 | 5.41% |
 
-![AOV by segment](figures/04_aov_by_segment.png)
+![AOV by segment](figures/05_segment_value.png)
 
 **The headline AOV ranking is a trap.** Regular customers spend the most per
 order — $368.72, above High Value's $360.72. If the business optimises for
@@ -326,7 +326,7 @@ total value (14.0× a Low Engagement customer).
 The Regular segment is the interesting one: it has the best basket economics in
 the store and almost none of the frequency.
 
-![Segment distribution](figures/05_segment_distribution.png)
+![Segment distribution](figures/06_segment_distribution.png)
 
 ### 6.4 What proportion of customers make repeat purchases?
 
@@ -352,7 +352,7 @@ revenue comes from repeat orders, and that share is entirely concentrated:
 of Low Engagement's (by definition — every Low Engagement customer has exactly
 one order).
 
-![Repeat behaviour](figures/06_repeat_behaviour.png)
+![Repeat behaviour](figures/08_repeat_behaviour.png)
 
 **Time between purchases.** Across 3,053 measured intervals:
 
@@ -367,7 +367,19 @@ one order).
 sits far above the median because of a long dormant tail — customers who come
 back after six months or more.
 
-![Inter-purchase intervals](figures/08_interpurchase_interval.png)
+![Inter-purchase intervals](figures/09_first_repeat_gap.png)
+
+**The second purchase is slower than a later repeat — and the two must not be
+averaged together.** The 56-day median above pools *every* gap between
+consecutive orders. Measured over only the 822 first→second transitions, the
+median is **102 days** (mean 134), and just 21.05% of second orders land within
+30 days, 37.83% within 60 days and 46.84% within 90 days. A customer who comes
+back once buys again far faster after that. **The campaign clock for a first
+repeat is 102 days, not 56** — a second-purchase programme triggered on the
+all-repeat average would arrive after two thirds of the eligible customers had
+already converted.
+
+![Revenue concentration](figures/11_revenue_concentration.png)
 
 ### 6.5 What purchasing patterns could improve revenue and retention?
 
@@ -396,6 +408,47 @@ of revenue.
 **e) Acquisition channel barely moves value.** Repeat rates run 37.38%
 (referral) to 43.54% (affiliate); social_organic has the highest AOV ($368.61)
 but only 142 customers. Channel choice is not where the money is.
+
+**f) Revenue is concentrated in a cohort the business has never tested.** The
+Gini coefficient of customer revenue is **0.5853**. The top 1% of customers
+hold 8.97% of revenue, the top 10% hold **43.99%**, the top 20% hold
+**62.03%**, and the top half hold 88.13% — so the bottom half of the customer
+base produces 11.87% of revenue. Losing a small cohort would cost a large
+share of the business, which makes retention a revenue-protection problem and
+not merely a nice-to-have.
+
+![Revenue concentration curve](figures/11_revenue_concentration.png)
+
+**g) The size of a customer's *first* order predicts whether they come back.**
+Repeat rate rises monotonically with first-order basket size:
+
+| First order | Customers | Repeat rate | Never returned | Avg lifetime revenue |
+|---|---:|---:|---:|---:|
+| 1 unit | 303 | **29.37%** | 214 | $408.02 |
+| 2 units | 334 | 38.32% | 206 | $637.08 |
+| 3–4 units | 651 | 39.63% | 393 | $762.82 |
+| 5+ units | 720 | **48.19%** | 373 | $1,178.90 |
+
+The 303 customers whose first order was a single item are the most
+at-risk population in the store: fewer than three in ten of them returned, and
+214 never did. **This signal is partly an artefact of this dataset** — the
+generator draws loyalty tier and basket size from the same latent variable —
+so it is a candidate hypothesis for a real store, not a finding about one. It
+is precisely the kind of signal that needs a holdout test rather than a
+rollout.
+
+![Repeat propensity by first order](figures/07_repeat_propensity_by_first_order.png)
+
+**h) Growth is acquisition, not retention — and the existing cohort bought
+more.** Revenue grew **+157.5%** year on year. The decomposition closes
+exactly: customers **+297.2%** × orders per customer **−30.7%** × AOV **−6.4%**
+= +157.5%. The blended fall in orders per customer is a **cohort-mix effect,
+not deteriorating customers**: the 2025 acquisition cohort bought 1.42 orders
+each (1,508 customers), while the customers carried over from 2024 bought
+**3.30** each (478 customers). The store added a large, shallow cohort; the
+cohort it already had bought more, not less.
+
+![Growth decomposition](figures/02_revenue_growth_decomposition.png)
 
 ---
 
@@ -453,19 +506,28 @@ customers out of the threshold rather than into a bigger basket.
 **Finding.** The median gap between orders is 56 days but the mean is 87.6 and
 the maximum is 672. A campaign timed on the mean fires far too late for the
 buyers who return quickly. 32.98% of repeats occur within 30 days and 65.05%
-within 90 days, so the repeat mass is concentrated but the tail is long.
+within 90 days, so the repeat mass is concentrated but the tail is long. The
+**first** transition is slower than the rest: the 822 first→second gaps have a
+median of **102 days**, and only 21.05% of second orders land within 30 days.
 
-**Action.** Run two distinct flows instead of one. A **nurture flow** at 30
+**Action.** Run three distinct flows instead of one. A **nurture flow** at 30
 days catches the third of repeats that happen inside a month; a **win-back
 flow** at 90 days catches the 65% mark and treats the remainder as a separate,
 lower-probability reactivation. Segment both flows by the customer's own
 segment, because the High Value segment's repeat revenue is 81.13% of its
 total while Regular's is 15.25% — the same message will not perform for both.
+For the **one-time-buyer** audience, which is where the opportunity actually
+sits, the clock is the 102-day first→second median, so the first contact
+should land at **day 30** and a second at **day 60** — deliberately ahead of
+the median, because the median is where the customer converts without help.
 
 **Measure.** Incremental repeat orders per contacted customer against a
 holdout, and the median gap for the treated cohort versus the control. Report
 on the median, not the mean, because the mean is dragged by exactly the tail
-this flow is trying to reach.
+this flow is trying to reach. The full experiment design for this
+recommendation — target population, treatment, holdout construction, primary
+and secondary outcomes, guardrails and evaluation window — is in
+**[`reports/decision_report.md`](decision_report.md)**.
 
 ---
 

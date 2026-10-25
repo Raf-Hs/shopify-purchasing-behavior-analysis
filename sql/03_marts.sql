@@ -86,7 +86,7 @@ JOIN (
     FROM stg_order_items
     GROUP BY order_id
 ) li ON li.order_id = o.order_id
-WHERE o.order_status = 'completed'
+WHERE o.order_status = '{{ELIGIBLE_ORDER_STATUS}}'
   AND o.order_date BETWEEN '{{PERIOD_START}}' AND '{{PERIOD_END}}';
 
 CREATE UNIQUE INDEX idx_fact_orders_id       ON fact_orders (order_id);
@@ -221,7 +221,8 @@ WITH metrics AS (
         MAX(f.order_date)                          AS last_order_date,
         COUNT(DISTINCT f.category)                 AS category_breadth,
         COUNT(DISTINCT f.product_id)               AS product_breadth,
-        CASE WHEN COUNT(DISTINCT f.order_id) >= 2 THEN 1 ELSE 0 END AS is_repeat_customer
+        CASE WHEN COUNT(DISTINCT f.order_id) >= {{REPEAT_ORDER_THRESHOLD}}
+             THEN 1 ELSE 0 END AS is_repeat_customer
     FROM fact_order_lines f
     GROUP BY f.customer_id
 ),
@@ -235,7 +236,8 @@ pct AS (
 scored AS (
     SELECT
         pct.*,
-        ROUND(0.65 * spend_percentile + 0.35 * order_percentile, 6) AS value_score
+        ROUND({{SEGMENT_WEIGHT_SPEND}} * spend_percentile
+              + {{SEGMENT_WEIGHT_ORDERS}} * order_percentile, 6) AS value_score
     FROM pct
 ),
 banded AS (
@@ -297,26 +299,3 @@ JOIN stg_customers c ON c.customer_id = e.customer_id;
 CREATE UNIQUE INDEX idx_dim_customers_id      ON dim_customers (customer_id);
 CREATE INDEX idx_dim_customers_segment        ON dim_customers (segment);
 CREATE INDEX idx_dim_customers_repeat         ON dim_customers (is_repeat_customer);
-
--- ---------------------------------------------------------------------------
--- Convenience views over the marts (thin, safe to inline).
--- ---------------------------------------------------------------------------
-DROP VIEW IF EXISTS v_order_facts;
-CREATE VIEW v_order_facts AS
-SELECT * FROM fact_order_lines;
-
-DROP VIEW IF EXISTS v_order_revenue;
-CREATE VIEW v_order_revenue AS
-SELECT * FROM fact_orders;
-
-DROP VIEW IF EXISTS v_customer_metrics;
-CREATE VIEW v_customer_metrics AS
-SELECT * FROM dim_customers;
-
-DROP VIEW IF EXISTS v_customer_segments;
-CREATE VIEW v_customer_segments AS
-SELECT * FROM dim_customers;
-
-DROP VIEW IF EXISTS v_eligible_customers;
-CREATE VIEW v_eligible_customers AS
-SELECT * FROM dim_customers;

@@ -836,6 +836,7 @@ banded AS (
 )
 SELECT
     first_order_basket,
+    basket_order,
     COUNT(*)                                                          AS customers,
     SUM(CASE WHEN orders >= 2 THEN 1 ELSE 0 END)                      AS repeat_customers,
     SUM(CASE WHEN orders = 1 THEN 1 ELSE 0 END)                       AS one_time_customers,
@@ -982,15 +983,18 @@ ORDER BY year;
 -- description: orders-per-customer can be a cohort-mix effect, not a drop in
 -- description: the behaviour of the customers the business already had.
 -- ---------------------------------------------------------------------------
-WITH customer_orders AS (
-    SELECT customer_id, order_id, order_date
-    FROM fact_order_lines
-    GROUP BY customer_id, order_id, order_date
+WITH filtered_orders AS (
+    SELECT DISTINCT f.customer_id, f.order_id, f.order_date
+    FROM fact_order_lines f
+    JOIN dim_customers d ON d.customer_id = f.customer_id
+    WHERE f.order_date BETWEEN :start_date AND :end_date
+      AND (:category IS NULL OR f.category = :category)
+      AND (:segment IS NULL OR d.segment = :segment)
 ),
 tenure AS (
-    SELECT customer_orders.*,
+    SELECT filtered_orders.*,
            strftime('%Y', MIN(order_date) OVER (PARTITION BY customer_id)) AS acquisition_year
-    FROM customer_orders
+    FROM filtered_orders
 )
 SELECT
     strftime('%Y', order_date)                                         AS order_year,
@@ -1002,9 +1006,6 @@ SELECT
     COUNT(DISTINCT order_id)                                          AS orders,
     ROUND(COUNT(DISTINCT order_id) * 1.0 / COUNT(DISTINCT customer_id), 3) AS orders_per_customer
 FROM tenure
-WHERE order_date BETWEEN :start_date AND :end_date
-  AND (:segment IS NULL OR customer_id IN (
-        SELECT customer_id FROM dim_customers WHERE segment = :segment))
 GROUP BY order_year, order_type
 ORDER BY order_year, order_type;
 

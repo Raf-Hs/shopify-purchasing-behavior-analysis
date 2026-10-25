@@ -19,11 +19,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 # ---------------------------------------------------------------------------
 RAW_DIR = PROJECT_ROOT / "data" / "raw"
 SQL_DIR = PROJECT_ROOT / "sql"
-SRC_DIR = PROJECT_ROOT / "src"
 REPORTS_DIR = PROJECT_ROOT / "reports"
 FIGURES_DIR = REPORTS_DIR / "figures"
-TESTS_DIR = PROJECT_ROOT / "tests"
-DOCS_DIR = PROJECT_ROOT / "docs"
 
 DB_PATH = PROJECT_ROOT / "shopify_analysis.db"
 
@@ -66,18 +63,16 @@ CURRENCY = "USD"
 # requirement still holds after the documented cleaning rules remove rows.
 MIN_LINE_ITEMS = 10_000
 TARGET_CUSTOMERS = 2_100
-TARGET_ORDERS = 5_200
 TARGET_LINE_ITEMS = 15_000
 
 # ---------------------------------------------------------------------------
-# Business rules (must match sql/02_views.sql and sql/03_analysis_queries.sql)
+# Business rules
 # ---------------------------------------------------------------------------
+# These values are injected into the SQL at build and run time through the
+# {{TOKEN}} mechanism, so the SQL and this file cannot drift apart.
 
 # Only `completed` orders count as eligible revenue events.
 ELIGIBLE_ORDER_STATUS = "completed"
-
-# Statuses that are explicitly excluded from revenue and order counts.
-EXCLUDED_ORDER_STATUSES = ("cancelled", "refunded", "pending")
 
 # Segment labels.
 SEGMENT_LOW = "Low Engagement"
@@ -120,3 +115,22 @@ MONTH_LABELS_EN = {
     1: "Jan", 2: "Feb", 3: "Mar", 4: "Apr", 5: "May", 6: "Jun",
     7: "Jul", 8: "Aug", 9: "Sep", 10: "Oct", 11: "Nov", 12: "Dec",
 }
+
+
+def render_sql(text: str) -> str:
+    """Substitute the {{TOKEN}} placeholders in a SQL file with config values.
+
+    The business rules live here once; the SQL references them as tokens, so
+    the two cannot drift apart.
+    """
+    replacements = {
+        "PERIOD_START": PERIOD_START,
+        "PERIOD_END": PERIOD_END,
+        "ELIGIBLE_ORDER_STATUS": ELIGIBLE_ORDER_STATUS,
+        "SEGMENT_WEIGHT_SPEND": SEGMENT_WEIGHT_SPEND,
+        "SEGMENT_WEIGHT_ORDERS": SEGMENT_WEIGHT_ORDERS,
+        "REPEAT_ORDER_THRESHOLD": REPEAT_ORDER_THRESHOLD,
+    }
+    for token, value in replacements.items():
+        text = text.replace(f"{{{{{token}}}}}", str(value))
+    return text

@@ -64,7 +64,6 @@ from config import (
     PERIOD_END,
     PERIOD_START,
     PRODUCTS_CSV,
-    RAW_DIR,
     REGISTRATION_START,
     SEED,
     TARGET_CUSTOMERS,
